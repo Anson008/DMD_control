@@ -7,6 +7,7 @@
 import visa
 import sys
 import time
+import numpy as np
 
 
 class DSO6034A(object):
@@ -45,3 +46,31 @@ class DSO6034A(object):
         else:
             chs_list = [0, 0, 0, 0]
         number_channels_on = 0
+        """
+        After the CHS_LIST array is filled it could, for example look like: if chs 1,3 and 4 were on, 
+        CHS_LIST = [1,0,1,1].
+        """
+
+        analog_vert_pres = np.zeros([12])
+        """
+        analog_vert_pres = (Y_INCrement_Ch1, Y_INCrement_Ch2, Y_INCrement_Ch3, Y_INCrement_Ch4, 
+                            Y_ORIGin_Ch1, Y_ORIGin_Ch2, Y_ORIGin_Ch3, Y_ORIGin_Ch4, 
+                            Y_REFerence_Ch1, Y_REFerence_Ch2, Y_REFerence_Ch3, Y_REFerence_Ch4)
+        """
+        ch_units = ["BLANK", "BLANK", "BLANK", "BLANK"]
+        scope.write(":WAVeform:POINts:MODE MAX")
+        ch_index = 1  # Channel index
+        for ch in chs_list:
+            on_off = int(scope.query(":CHANnel{:s}:DISPlay?".format(ch)))
+            if on_off == 1:
+                channel_acquired = int(scope.query(":WAVeform:SOURce CHANnel{:s};POINts?".format(ch)))
+            else:
+                channel_acquired = 0
+            if on_off == 0 or channel_acquired == 0:
+                scope.write(":CHANnel{:s}:DISPlay OFF".format(ch))
+                chs_list[ch-1] = 0
+            else:
+                chs_list[ch-1] = 1
+                number_channels_on += 1
+
+
