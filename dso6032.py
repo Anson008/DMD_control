@@ -35,6 +35,12 @@ class DSO6034A(object):
         return scope
 
     def channels(self, scope):
+        """
+        Determine Which channels are on AND have acquired data.
+        Scope should have already acquired data and be in a stopped state (Run/Stop button is red).
+        :param scope: a scope object returned by 'connect' method.
+        :return: tuple, (number_channels_on, [chs_on]). [chs_on] is a list of index of channels that are on.
+        """
         idn = str(scope.query("*IDN?"))
         idn = idn.split(",")  # IDN parts are separated by commas, so parse on the commas
         model = idn[1]
@@ -91,13 +97,14 @@ class DSO6034A(object):
         ch_index = 1
         for ch in chs_list:
             if ch == 1:
-                chs_on.append(int(ch))
+                chs_on.append(int(ch_index))
             ch_index += 1
-        return chs_on
+        return number_channels_on, chs_on
 
-    def acquisite(self, scope, channels):
+    def acquisite(self, scope, channels, num_of_channels):
         """
         Setup data export - For repetitive acquisitions, this only needs to be done once unless settings are changed
+        :param channels:
         :param scope: scope object returned by 'connect' method.
         :return:
         """
@@ -150,7 +157,28 @@ class DSO6034A(object):
         # If one wants some other number of points...
         # Tell it how many points you want
         scope.write(":WAVeform:POINts " + str(self.USER_REQUESTED_POINTS))
-        number_of_points_to_actually_retrieve = int(scope.query(":WAVeform:POINts?"))
+        pts_to_retrieve = int(scope.query(":WAVeform:POINts?"))
+        pre_amble = scope.query(":WAVeform:PREamble?").split(',')
+        x_increment = float(pre_amble[4])
+        x_origin = float(pre_amble[5])
+        x_reference = float(pre_amble[6])
+
+        data_time = ((np.linspace(0, pts_to_retrieve - 1, pts_to_retrieve) - x_reference) * x_increment) + x_origin
+        if acq_type == "PEAK":
+            data_time = np.repeat(data_time, 2)
+        if acq_type == "PEAK":
+            data_wave = np.zeros([2 * pts_to_retrieve, num_of_channels])
+        else:
+            data_wave = np.zeros([pts_to_retrieve, num_of_channels])
+
+        # Get the waveform format
+        wave_format = str(scope.query(":WAVeform:FORMat?"))
+        if wave_format == "BYTE":
+            format_multiplier = 1
+        else:  # wave_format == "WORD"
+            format_multiplier = 2
+
+
 
 
 
