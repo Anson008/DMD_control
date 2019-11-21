@@ -10,3 +10,4 @@ print("{:d}".format(d))
 
 print("""\n\nIt took {:.2f} seconds to transfer and scale {:d} channel(s). 
 Each channel had {:d} points.\n""".format(c, d, d))
+np.savetxt("test.csv", a1, delimiter=',', fmt="%3.5f")

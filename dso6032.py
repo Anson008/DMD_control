@@ -21,6 +21,7 @@ class DSO6034A(object):
         self.number_channels_on = 0
         self.chs_on = []
         self.scope = None
+        self.ch_units = ["BLANK", "BLANK", "BLANK", "BLANK"]
         self.analog_vert_pres = np.zeros((3, 4))
         # analog_vert_pres = [[Y_INCrement_Ch1, Y_INCrement_Ch2, Y_INCrement_Ch3, Y_INCrement_Ch4],
         #                    [Y_ORIGin_Ch1, Y_ORIGin_Ch2, Y_ORIGin_Ch3, Y_ORIGin_Ch4],
@@ -61,13 +62,6 @@ class DSO6034A(object):
         # After the CHS_LIST array is filled it could, for example look like: if chs 1,3 and 4 were on,
         # CHS_LIST = [1,0,1,1].
 
-        # analog_vert_pres = np.zeros((3, 4))
-
-        # analog_vert_pres = [[Y_INCrement_Ch1, Y_INCrement_Ch2, Y_INCrement_Ch3, Y_INCrement_Ch4],
-        #                    [Y_ORIGin_Ch1, Y_ORIGin_Ch2, Y_ORIGin_Ch3, Y_ORIGin_Ch4],
-        #                    [Y_REFerence_Ch1, Y_REFerence_Ch2, Y_REFerence_Ch3, Y_REFerence_Ch4]]
-
-        ch_units = ["BLANK", "BLANK", "BLANK", "BLANK"]
         self.scope.write(":WAVeform:POINts:MODE MAX")
         ch_index = 1  # Channel index
         for ch in chs_list:
@@ -86,7 +80,7 @@ class DSO6034A(object):
                 self.analog_vert_pres[0, ch-1] = float(pre_amble[7])
                 self.analog_vert_pres[1, ch-1] = float(pre_amble[8])
                 self.analog_vert_pres[2, ch-1] = float(pre_amble[9])
-                ch_units[ch-1] = str(self.scope.query(":CHANnel{:s}:UNITs?".format(ch)).strip('\n'))
+                self.ch_units[ch-1] = str(self.scope.query(":CHANnel{:s}:UNITs?".format(ch)).strip('\n'))
             ch_index += 1
 
         if self.number_channels_on == 0:
@@ -215,6 +209,7 @@ class DSO6034A(object):
 
             # Scaled_waveform_Data[*] = [(Unscaled_Waveform_Data[*] - Y_reference) * Y_increment] + Y_origin
             data_wave[:, i] = ((data_wave[:, i] - self.analog_vert_pres[2, ch-1])*self.analog_vert_pres[0, ch-1]+self.analog_vert_pres[1, ch-1])
+            i += 1
 
         # Reset the chunk size back to default if needed.
         # If you don't do this, and now wanted to do something else... such as ask for a measurement
@@ -226,6 +221,30 @@ class DSO6034A(object):
         print("Each channel had {:d} points.\n".format(pts_to_retrieve))
         self.scope.clear()
         self.scope.close()
+        return data_time, data_wave
+
+    def save_data(self, t, wave, file_name, directory, file_type="npy"):
+        if file_type == "csv":
+            # If saving repetitive acquisitions, it may be better to just save off a single time axis file, and
+            # not just replicate it w/ every save.
+            header = "Time (s), "
+            for ch in self.chs_on:
+                header = header + "Channel {:d} ({:s})".format(ch, self.ch_units[ch-1])
+            header = header + "\n"
+
+            time_start = time.clock()
+            filename = directory + file_name + ".csv"
+            with open(filename, 'w') as filehandle:
+                filehandle.write(header)
+                np.savetxt(filehandle, np.insert(wave, 0, t, axis=1), delimiter=',', fmt="%3.5f")
+            print("It took {:.2f} seconds to save {:d} channels and the time axis in csv format.".format(
+                time.clock() - time_start, self.number_channels_on))
+        elif file_type == "npy":
+            time_start = time.clock()
+            filename = directory + file_name + ".npy"
+            np.save(filename, np.insert(wave, 0, t, axis=1))
+            print("It took {:.2f} seconds to save {:d} channels and the time axis in binary format.".format(
+                time.clock() - time_start, self.number_channels_on))
 
 
 
