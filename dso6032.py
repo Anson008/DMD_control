@@ -21,13 +21,17 @@ class DSO6034A(object):
         self.number_channels_on = 0
         self.chs_on = []
         self.scope = None
+        self.analog_vert_pres = np.zeros((3, 4))
+        # analog_vert_pres = [[Y_INCrement_Ch1, Y_INCrement_Ch2, Y_INCrement_Ch3, Y_INCrement_Ch4],
+        #                    [Y_ORIGin_Ch1, Y_ORIGin_Ch2, Y_ORIGin_Ch3, Y_ORIGin_Ch4],
+        #                    [Y_REFerence_Ch1, Y_REFerence_Ch2, Y_REFerence_Ch3, Y_REFerence_Ch4]]
 
     def connect(self):
         """
         Define and open the scope by the VISA address. This uses PyVISA
         :return: scope object
         """
-        rm = visa.ResourceManager(self.VISA_DIR)
+        rm = pyvisa.ResourceManager(self.VISA_DIR)
         try:
             self.scope = rm.open_resource(self.VISA_ADDRESS)
         except Exception:
@@ -57,7 +61,7 @@ class DSO6034A(object):
         # After the CHS_LIST array is filled it could, for example look like: if chs 1,3 and 4 were on,
         # CHS_LIST = [1,0,1,1].
 
-        analog_vert_pres = np.zeros((3, 4))
+        # analog_vert_pres = np.zeros((3, 4))
 
         # analog_vert_pres = [[Y_INCrement_Ch1, Y_INCrement_Ch2, Y_INCrement_Ch3, Y_INCrement_Ch4],
         #                    [Y_ORIGin_Ch1, Y_ORIGin_Ch2, Y_ORIGin_Ch3, Y_ORIGin_Ch4],
@@ -79,9 +83,9 @@ class DSO6034A(object):
                 chs_list[ch-1] = 1
                 self.number_channels_on += 1
                 pre_amble = self.scope.query(":WAVeform:PREamble?").split(",")
-                analog_vert_pres[0, ch-1] = float(pre_amble[7])
-                analog_vert_pres[1, ch-1] = float(pre_amble[8])
-                analog_vert_pres[2, ch-1] = float(pre_amble[9])
+                self.analog_vert_pres[0, ch-1] = float(pre_amble[7])
+                self.analog_vert_pres[1, ch-1] = float(pre_amble[8])
+                self.analog_vert_pres[2, ch-1] = float(pre_amble[9])
                 ch_units[ch-1] = str(self.scope.query(":CHANnel{:s}:UNITs?".format(ch)).strip('\n'))
             ch_index += 1
 
@@ -206,10 +210,22 @@ class DSO6034A(object):
         time_start = time.clock()  # Only to show how long it takes to transfer and scale the data.
         i = 0  # index of Wav_data, recall that python indices start at 0, so ch1 is index 0
         for ch in self.chs_on:
-            data_wave[:, i] = np.array(self.scope.query_binary_valuese(':WAVeform:SOURce CHANnel' + str(ch) + ';DATA?', "h", False))
+            data_wave[:, i] = np.array(self.scope.query_binary_valuese(':WAVeform:SOURce CHANnel' + str(ch) + ';DATA?',
+                                                                       datatype="h", is_big_endian=False))
 
+            # Scaled_waveform_Data[*] = [(Unscaled_Waveform_Data[*] - Y_reference) * Y_increment] + Y_origin
+            data_wave[:, i] = ((data_wave[:, i] - self.analog_vert_pres[2, ch-1])*self.analog_vert_pres[0, ch-1]+self.analog_vert_pres[1, ch-1])
 
-
+        # Reset the chunk size back to default if needed.
+        # If you don't do this, and now wanted to do something else... such as ask for a measurement
+        # result, and leave the chunk size set to something large, it can really slow down the script,
+        # so set it back to default, which works well.
+        if total_bytes_to_xfer >= 400000:
+            self.scope.chunk_size = 20480
+        print("\n\nIt took {:.2f} seconds to transfer and scale {:d} channel(s).".format(time.clock() - time_start, self.number_channels_on))
+        print("Each channel had {:d} points.\n".format(pts_to_retrieve))
+        self.scope.clear()
+        self.scope.close()
 
 
 
