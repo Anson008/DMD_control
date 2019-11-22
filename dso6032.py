@@ -11,12 +11,15 @@ import numpy as np
 
 
 class DSO6034A(object):
-    def __init__(self, points, visa_address, filename, file_directory, visa_dir="C:\\Windows\\System32\\visa32.dll", timeout=10000):
-        self.USER_REQUESTED_POINTS = int(points)
+    def __init__(self, visa_address, visa_dir="C:\\Windows\\System32\\visa32.dll", timeout=10000):
+        """
+        Define attributes of this class.
+        :param visa_address: string, get this from Keysight IO Libraries Connection Expert
+        :param visa_dir: string, directory of visa32.dll or visa64.dll
+        :param timeout: int, IO time out in milliseconds
+        """
         self.VISA_ADDRESS = visa_address
         self.GLOBAL_TIMEOUT = timeout
-        self.FILE_NAME = filename
-        self.FILE_DIRECTORY = file_directory
         self.VISA_DIR = visa_dir
         self.number_channels_on = 0
         self.chs_on = []
@@ -95,7 +98,7 @@ class DSO6034A(object):
                 self.chs_on.append(int(ch_index))
             ch_index += 1
 
-    def acquisition(self):
+    def acquisition(self, points=1000):
         """
         Setup data export - For repetitive acquisitions, this only needs to be done once unless settings are changed
         :param scope: scope object returned by 'connect' method.
@@ -138,14 +141,14 @@ class DSO6034A(object):
 
         #  The scope will return a -222,"Data out of range" error if fewer than 100 points are requested,
         #  even though it may actually return fewer than 100 points.
-        if self.USER_REQUESTED_POINTS < 100:
-            self.USER_REQUESTED_POINTS = 100
-        if self.USER_REQUESTED_POINTS > max_currently_available_points or acq_type == "PEAK":
-            self.USER_REQUESTED_POINTS = max_currently_available_points
+        if points < 100:
+            points = 100
+        if points > max_currently_available_points or acq_type == "PEAK":
+            points = max_currently_available_points
 
         # If one wants some other number of points...
         # Tell it how many points you want
-        self.scope.write(":WAVeform:POINts " + str(self.USER_REQUESTED_POINTS))
+        self.scope.write(":WAVeform:POINts " + str(points))
         pts_to_retrieve = int(self.scope.query(":WAVeform:POINts?"))
         pre_amble = self.scope.query(":WAVeform:PREamble?").split(',')
         x_increment = float(pre_amble[4])
@@ -245,6 +248,8 @@ class DSO6034A(object):
             np.save(filename, np.insert(wave, 0, t, axis=1))
             print("It took {:.2f} seconds to save {:d} channels and the time axis in binary format.".format(
                 time.clock() - time_start, self.number_channels_on))
+        else:
+            print("Unsupported file type. Please save to .csv or .npy files.")
 
 
 
