@@ -3,7 +3,6 @@
 # Edit in the file save locations ## IMPORTANT NOTE:  This script WILL overwrite previously saved files!
 # Manually (or write more code) acquire data on the oscilloscope.  Ensure that it finished (Run/Stop button is red).
 
-
 import pyvisa
 import sys
 import time
@@ -66,15 +65,15 @@ class DSO6034A(object):
         # CHS_LIST = [1,0,1,1].
 
         self.scope.write(":WAVeform:POINts:MODE MAX")
-        ch_index = 1  # Channel index
-        for ch in chs_list:
-            on_off = int(self.scope.query(":CHANnel{:s}:DISPlay?".format(ch)))
+        ch = 1  # Channel index
+        for value in chs_list:
+            on_off = int(self.scope.query(":CHANnel{:d}:DISPlay?".format(ch)))
             if on_off == 1:
-                channel_acquired = int(self.scope.query(":WAVeform:SOURce CHANnel{:s};POINts?".format(ch)))
+                channel_acquired = int(self.scope.query(":WAVeform:SOURce CHANnel{:d};POINts?".format(ch)))
             else:
                 channel_acquired = 0
             if on_off == 0 or channel_acquired == 0:
-                self.scope.write(":CHANnel{:s}:DISPlay OFF".format(ch))
+                self.scope.write(":CHANnel{:d}:DISPlay OFF".format(ch))
                 chs_list[ch-1] = 0
             else:
                 chs_list[ch-1] = 1
@@ -83,15 +82,14 @@ class DSO6034A(object):
                 self.analog_vert_pres[0, ch-1] = float(pre_amble[7])
                 self.analog_vert_pres[1, ch-1] = float(pre_amble[8])
                 self.analog_vert_pres[2, ch-1] = float(pre_amble[9])
-                self.ch_units[ch-1] = str(self.scope.query(":CHANnel{:s}:UNITs?".format(ch)).strip('\n'))
-            ch_index += 1
+                self.ch_units[ch-1] = str(self.scope.query(":CHANnel{:d}:UNITs?".format(ch)).strip('\n'))
+            ch += 1
 
         if self.number_channels_on == 0:
             self.scope.clear()
             self.scope.close()
             sys.exit("No data has been acquired. Properly closing scope and aborting script.")
 
-        # chs_on = []
         ch_index = 1
         for ch in chs_list:
             if ch == 1:
@@ -134,8 +132,8 @@ class DSO6034A(object):
         # not "see it."
         # Addendum 1 shows how to properly get all data on screen, but this is never needed for Average and High
         # Resolution Acquisition Types, since they basically don't use off-screen data; what you see is what you get.
-
-        self.scope.write(":WAVeform:SOURce CHANnel{:s}".format(self.chs_on[0]))
+        print("Chs on:", self.chs_on)
+        self.scope.write(":WAVeform:SOURce CHANnel{:d}".format(self.chs_on[0]))
         self.scope.write(":WAVeform:POINts MAX")
         self.scope.write(":WAVeform:POINts:MODE {:s}".format(points_mode))
         max_currently_available_points = int(self.scope.query(":WAVeform:POINts?"))
@@ -208,7 +206,7 @@ class DSO6034A(object):
         time_start = time.clock()  # Only to show how long it takes to transfer and scale the data.
         i = 0  # index of Wav_data, recall that python indices start at 0, so ch1 is index 0
         for ch in self.chs_on:
-            data_wave[:, i] = np.array(self.scope.query_binary_valuese(':WAVeform:SOURce CHANnel' + str(ch) + ';DATA?',
+            data_wave[:, i] = np.array(self.scope.query_binary_values(':WAVeform:SOURce CHANnel' + str(ch) + ';DATA?',
                                                                        datatype="h", is_big_endian=False))
 
             # Scaled_waveform_Data[*] = [(Unscaled_Waveform_Data[*] - Y_reference) * Y_increment] + Y_origin
@@ -227,8 +225,8 @@ class DSO6034A(object):
         self.scope.close()
         return data_time, data_wave
 
-    def save_data(self, t, wave, file_name, directory, file_type="npy"):
-        if file_type == "csv":
+    def save_data(self, t, wave, file_name, directory, file_type=".npy"):
+        if file_type == ".csv" or file_type == "csv":
             # If saving repetitive acquisitions, it may be better to just save off a single time axis file, and
             # not just replicate it w/ every save.
             header = "Time (s), "
@@ -243,7 +241,7 @@ class DSO6034A(object):
                 np.savetxt(filehandle, np.insert(wave, 0, t, axis=1), delimiter=',', fmt="%3.5f")
             print("It took {:.2f} seconds to save {:d} channels and the time axis in csv format.".format(
                 time.clock() - time_start, self.number_channels_on))
-        elif file_type == "npy":
+        elif file_type == ".npy" or file_type == "npy":
             time_start = time.clock()
             filename = directory + file_name + ".npy"
             np.save(filename, np.insert(wave, 0, t, axis=1))
