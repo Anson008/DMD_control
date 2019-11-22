@@ -101,6 +101,7 @@ class DSO6034A(object):
     def acquisition(self, points=1000):
         """
         Setup data export - For repetitive acquisitions, this only needs to be done once unless settings are changed
+        :param points: int, user requested number of points
         :param scope: scope object returned by 'connect' method.
         :return:
         """
