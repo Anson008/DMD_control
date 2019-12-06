@@ -1,2 +1,7 @@
 /test.py
 *.avi
+*.png
+
+
+**/videos
+**/img_sequence
