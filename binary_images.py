@@ -65,6 +65,21 @@ class BinaryImage(object):
                 break
         cv2.destroyAllWindows()
 
+    def add_padding(self, pad_width):
+        """
+        :para width: tuple, ((before1, after1), (before2, after2)) specifies the number of values padded to the edges of each axis.
+        :return: numpy array, padded array.
+        """
+        self._pixels = np.pad(self._pixels, ((0, 0), (pad_width[0][0], pad_width[0][1]), (pad_width[1][0], pad_width[1][1])),
+                              'constant', constant_values=((0, 0),))
+
+    def undo_padding(self, pad_width):
+        """
+        :para width: tuple, ((before1, after1), (before2, after2)) specifies the number of values removed against the edges of each axis.
+        :return: numpy array, padded array.
+        """
+        self._pixels = self._pixels[:, pad_width[0][0]:-pad_width[0][1], pad_width[1][0]:-pad_width[1][1]]
+
     def make_image_sequence(self, directory='./img_sequence', fmt='.png'):
         """
         Save image sequence to a user specified directory, with auto naming from "0" to "# of images - 1".
@@ -87,11 +102,11 @@ class BinaryImage(object):
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
-        w, h = self._width * self._xy_scale, self._height * self._xy_scale
+        fs, w, h = self._pixels.shape
         file_path = directory + '/' + filename + fmt
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
-        for z in range(self._frames):
+        for z in range(fs):
             thresh, frame_b = cv2.threshold(self._pixels[z, :, :], 127, 255, cv2.THRESH_BINARY)
             video.write(frame_b)
         video.release()
@@ -110,24 +125,28 @@ if __name__ == "__main__":
                  419, 421, 431, 433, 439, 443, 449, 457, 461, 463,
                  467, 479, 487, 491, 499, 503, 509, 521, 523, 541]
 
-    binary_img = BinaryImage(240, 2, 2, 100, prime_num)
+    padding = ((200, 200), (200, 200))
+    binary_img = BinaryImage(24, 2, 2, 100, prime_num)
     frames, height, width, scale = binary_img.get_img_shape()
 
     start = time.time()
     binary_img.generate_images()
     print("\nIt took {:.2f} s to generate image sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
-          "\nThe shape of actual images should be ({:d}, {:d}, {:d})."
+          "\nThe shape of actual images should be ({:d}, {:d}, {:d}), without taking account into padding."
           .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
 
-    # binary_img.preview()
     # binary_img.print_through_time([(0, 2), (0, 2)])
 
+    binary_img.add_padding(pad_width=padding)
+    # binary_img.undo_padding(pad_width=padding)
+    # binary_img.preview()
     image = binary_img.get_pixels()
     print("\nShape of generated images:", image.shape)
 
+
     #binary_img.make_image_sequence()
-    #binary_img.make_binary_video(fps=24)
+    #binary_img.make_binary_video(fps=24, filename='24KFrames_24Fps_8by8_200Padding')
 
 
 
