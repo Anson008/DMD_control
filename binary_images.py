@@ -33,6 +33,12 @@ class BinaryImage(object):
         """
         return self._pixels
 
+    def save_to_npy(self, directory='./raw_data', filename='test'):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        file_path = directory + '/' + filename + '.npy'
+        np.save(file_path, self._pixels)
+
     def generate_images(self):
         """
         Generate binary images according to the given periods.
@@ -133,9 +139,11 @@ if __name__ == "__main__":
 
     binary_img.add_padding(pad_width=padding)
     # binary_img.undo_padding(pad_width=padding)
-    binary_img.preview()
+    # binary_img.preview()
     image = binary_img.get_pixels()
     print("\nShape of generated images:", image.shape)
+    # binary_img.save_to_npy()
+
 
 
     #binary_img.make_image_sequence()
