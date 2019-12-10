@@ -116,7 +116,7 @@ class BinaryImage(object):
         file_path = directory + "/" + filename + fmt
         cv2.imwrite(file_path, img)
 
-    def make_image_sequence(self, directory='./img_sequence', fmt='.png'):
+    def make_image_sequence(self, directory='./img_sequence', filename='test', fmt='.png'):
         """
         Save image sequence to a user specified directory, with auto naming from "0" to "# of images - 1".
         :para directory: string, destination directory.
@@ -125,7 +125,7 @@ class BinaryImage(object):
         if not os.path.exists(directory):
             os.makedirs(directory)
         for z in range(self._frames):
-            file_path = directory + "/" + "{:d}".format(z).zfill(len(str(z))) + fmt
+            file_path = directory + "/" + filename + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
             cv2.imwrite(file_path, self._pixels[z, :, :])
 
     def make_binary_video(self, fps, directory='./videos', filename='video1', fmt='.avi'):
@@ -149,33 +149,49 @@ class BinaryImage(object):
 
 
 if __name__ == "__main__":
-    # Leading 100 prime numbers
+    # Load the leading 100 prime numbers
     periods = PeriodGenerator()
     prime_num = periods.prime_numbers()
 
-    padding = ((200, 200), (200, 200))
-    binary_img = BinaryImage(24, 8, 8, 5, padding, prime_num)
+    # Set image padding, create an object of BinaryImage class.
+    padding = ((5, 5), (5, 5))
+    binary_img = BinaryImage(24, 2, 2, 100, padding, prime_num)
+
+    # Get image shape.
     frames, height, width, scale = binary_img.get_img_shape()
 
+    # Generate image sequence without padding.
     start = time.time()
-    # binary_img.generate_images()
-    """print("\nIt took {:.2f} s to generate image sequence of shape "
+    binary_img.generate_images()
+    print("\nIt took {:.2f} s to generate image sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual images should be ({:d}, {:d}, {:d}), without taking account into padding."
-          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
+          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
 
+    # Preview image pixel values along time axis.
     # binary_img.print_through_time([(0, 2), (0, 2)])
 
-    # binary_img.add_padding()
+    # Add padding to images.
+    binary_img.add_padding()
+
+    # Undo padding to images if necessary.
     # binary_img.undo_padding(pad_width=padding)
+
+    # Preview image sequence frame by frame if necessary.
     # binary_img.preview()
+
+    # Get pixel values if necessary.
     # image = binary_img.get_pixels()
     # print("\nShape of generated images:", image.shape)
-    # binary_img.save_to_npy()
-    calib_img = binary_img.make_calibration_image()
-    binary_img.save_image(calib_img, filename='calib_8by8')
 
-    # binary_img.make_image_sequence()
+    # Save pixel values to .npy file if necessary.
+    # binary_img.save_to_npy()
+
+    # Make calibration images if necessary.
+    # calib_img = binary_img.make_calibration_image()
+    # binary_img.save_image(calib_img, filename='calib_8by8')
+
+    binary_img.make_image_sequence()
     # binary_img.make_binary_video(fps=24, filename='24KFrames_24Fps_8by8_200Padding')
 
 
