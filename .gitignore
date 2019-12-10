@@ -1,7 +1,8 @@
-/test.py
+test.py
 *.avi
 *.png
 
 
 **/videos
 **/img_sequence
+**/raw_data
