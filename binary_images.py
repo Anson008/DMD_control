@@ -6,18 +6,20 @@ from periods import PeriodGenerator
 
 
 class BinaryImage(object):
-    def __init__(self, frames, width, height, xy_scale, periods):
+    def __init__(self, frames, width, height, xy_scale, padding, periods):
         """
         :_frames: int, number of frames in the image sequence
         :_width: int, image width
         :_height: int, image height
         :_periods: list of int, the periods of signals along z axis specifying by (y, x)
+        :_width: tuple, ((before1, after1), (before2, after2)) specifies the number of values padded to the edges of each axis.
         :_pixels: numpy array, store the pixel values of the final image
         """
         self._frames = frames
         self._width = width
         self._height = height
         self._xy_scale = xy_scale
+        self._padding = padding
         self._periods = periods
         self._pixels = None
 
@@ -72,20 +74,23 @@ class BinaryImage(object):
                 break
         cv2.destroyAllWindows()
 
-    def add_padding(self, pad_width):
+    def add_padding(self):
         """
-        :para width: tuple, ((before1, after1), (before2, after2)) specifies the number of values padded to the edges of each axis.
+
         :return: numpy array, padded array.
         """
-        self._pixels = np.pad(self._pixels, ((0, 0), (pad_width[0][0], pad_width[0][1]), (pad_width[1][0], pad_width[1][1])),
+        self._pixels = np.pad(self._pixels, ((0, 0), (self._padding[0][0], self._padding[0][1]), (self._padding[1][0], self._padding[1][1])),
                               'constant', constant_values=((0, 0),))
 
-    def undo_padding(self, pad_width):
+    def undo_padding(self):
         """
         :para width: tuple, ((before1, after1), (before2, after2)) specifies the number of values removed against the edges of each axis.
         :return: numpy array, padded array.
         """
-        self._pixels = self._pixels[:, pad_width[0][0]:-pad_width[0][1], pad_width[1][0]:-pad_width[1][1]]
+        self._pixels = self._pixels[:, self._padding[0][0]:-self._padding[0][1], self._padding[1][0]:-self._padding[1][1]]
+
+    def make_calibration_image(self, pad_width):
+        pass
 
     def make_image_sequence(self, directory='./img_sequence', fmt='.png'):
         """
@@ -125,7 +130,7 @@ if __name__ == "__main__":
     prime_num = periods.prime_numbers()
 
     padding = ((200, 200), (200, 200))
-    binary_img = BinaryImage(24, 2, 2, 100, prime_num)
+    binary_img = BinaryImage(24, 2, 2, 100, padding, prime_num)
     frames, height, width, scale = binary_img.get_img_shape()
 
     start = time.time()
@@ -137,9 +142,9 @@ if __name__ == "__main__":
 
     # binary_img.print_through_time([(0, 2), (0, 2)])
 
-    binary_img.add_padding(pad_width=padding)
+    binary_img.add_padding()
     # binary_img.undo_padding(pad_width=padding)
-    # binary_img.preview()
+    binary_img.preview()
     image = binary_img.get_pixels()
     print("\nShape of generated images:", image.shape)
     # binary_img.save_to_npy()
