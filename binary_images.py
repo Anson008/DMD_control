@@ -105,6 +105,12 @@ class BinaryImage(object):
 
     @staticmethod
     def save_image(img, directory='./calibration', filename='calib_01', fmt='.png'):
+        """
+        Save a single image to a user specified directory.
+        :para directory: string, destination directory.
+        :para filename: string, file name without extension.
+        :para fmt: string, format of the image files. Default is '.png'.
+        """
         if not os.path.exists(directory):
             os.makedirs(directory)
         file_path = directory + "/" + filename + fmt
