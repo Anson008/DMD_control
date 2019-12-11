@@ -143,6 +143,7 @@ class BinaryImage(object):
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
         for z in range(fs):
+            # Convert gray scale to binary.
             thresh, frame_b = cv2.threshold(self._pixels[z, :, :], 127, 255, cv2.THRESH_BINARY)
             video.write(frame_b)
         video.release()
@@ -155,7 +156,7 @@ if __name__ == "__main__":
 
     # Set image padding, create an object of BinaryImage class.
     padding = ((5, 5), (5, 5))
-    binary_img = BinaryImage(24, 2, 2, 100, padding, prime_num)
+    binary_img = BinaryImage(24000, 2, 2, 10, padding, prime_num)
 
     # Get image shape.
     frames, height, width, scale = binary_img.get_img_shape()
@@ -172,7 +173,7 @@ if __name__ == "__main__":
     # binary_img.print_through_time([(0, 2), (0, 2)])
 
     # Add padding to images.
-    binary_img.add_padding()
+    # binary_img.add_padding()
 
     # Undo padding to images if necessary.
     # binary_img.undo_padding(pad_width=padding)
@@ -185,13 +186,13 @@ if __name__ == "__main__":
     # print("\nShape of generated images:", image.shape)
 
     # Save pixel values to .npy file if necessary.
-    # binary_img.save_to_npy()
+    binary_img.save_to_npy()
 
     # Make calibration images if necessary.
     # calib_img = binary_img.make_calibration_image()
     # binary_img.save_image(calib_img, filename='calib_8by8')
 
-    binary_img.make_image_sequence()
+    # binary_img.make_image_sequence()
     # binary_img.make_binary_video(fps=24, filename='24KFrames_24Fps_8by8_200Padding')
 
 
