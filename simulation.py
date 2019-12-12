@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from binary_images import BinaryImage
 from periods import PeriodGenerator
+import math
 
 
 class SimulationEngine:
@@ -33,10 +34,13 @@ class SimulationEngine:
 
     def do_fft(self):
         avg = np.mean(self._data, axis=(1, 2))
-        ft = np.fft.fft(avg)
+        ft_abs = np.abs(np.fft.fft(avg))
         n = avg.size
-        freq = np.sort(np.fft.fftfreq(n, d=self._t_step))
-        return ft, freq
+        freq = np.fft.fftfreq(n, d=self._t_step)
+        return ft_abs, freq
+
+    def construct_image(self):
+        pass
 
 
 if __name__ == "__main__":
@@ -46,7 +50,7 @@ if __name__ == "__main__":
     print("({:d}, {:d}, {:d})".format(frame, width, height))
 
     ft, freq = simEng.do_fft()
-    plt.plot(freq, ft.real)
+    plt.plot(freq[1:math.ceil(frame / 2)], ft[1:math.ceil(frame / 2)])
     plt.show()
 
     simEng.freq_map()
