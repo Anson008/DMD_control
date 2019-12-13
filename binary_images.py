@@ -58,7 +58,7 @@ class BinaryImage(object):
 
     def print_through_time(self, xy_range):
         """
-        :*xy_range: list of tuple, specify the (x, y) range of image we want to print out along z axis.
+        :xy_range: list of tuple, specify the (x, y) range of image we want to print out along z axis.
                    [(x1, x2), (y1, y2)]
         """
         print("-"*10, "Preview of signal along z axis", "-"*10)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
     # Set image padding, create an object of BinaryImage class.
     padding = ((5, 5), (5, 5))
-    binary_img = BinaryImage(24000, 2, 2, 10, padding, prime_num)
+    binary_img = BinaryImage(20000, 2, 2, 10, padding, prime_num)
 
     # Get image shape.
     frames, height, width, scale = binary_img.get_img_shape()

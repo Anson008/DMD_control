@@ -19,10 +19,14 @@ class SimulationEngine:
         self._pattern_shape = pattern_shape
 
     def freq_map(self):
+        """
+        Map each frequency with its position in the pattern.
+        """
         period = PeriodGenerator
         num_pixels = self._pattern_shape[0] * self._pattern_shape[1]
         p_num = period.prime_numbers()[:num_pixels]
         for i in range(num_pixels):
+            # freq = np.around(1 / (self._t_step * p_num[i] * 2), 4)
             freq = 1 / (self._t_step * p_num[i] * 2)
 
             # x = index % width (column index), y = index // width (row index)
@@ -33,6 +37,9 @@ class SimulationEngine:
         return self._freq_to_index
 
     def load_data(self, data_path='./raw_data/test.npy'):
+        """
+        :data_path: staring, path of image sequence data to load.
+        """
         self._data = np.load(data_path)
 
     def get_data_shape(self):
@@ -49,14 +56,24 @@ class SimulationEngine:
     def wrap_ft_results(freq, ft):
         return dict(zip(freq, ft))
 
-    @staticmethod
-    def construct_image(freq_index, freq_to_ampl, height, width):
-        res = np.zeros((height, width))
-        for freq1, ampl in freq_to_ampl.items():
-            if freq1 in freq_index:
-                res[freq_index[freq1][0], freq_index[freq1][1]] = ampl
-                print("freq: {:f}, ampl: {:f}, "
-                      "index: ({:d}, {:d})".format(freq1, ampl, freq_index[freq1][0], freq_index[freq1][1]))
+    def construct_image(self, freq_index, freq_to_ampl, height, width, scale=5):
+        """
+        :freq_index: dictionary, frequency-to-index map obtained from 'freq_map' method.
+        :freq_to_ampl: dictionary, frequency-to-amplitude map obtained from 'wrap_ft_results' method.
+        :height: int, native height of the image
+        :width: int, native width of the image
+        :scale: int, scale factor to enlarge the image.
+        :return: numpy array, scaled image data.
+        """
+        epsilson = 5 * (1 / self._data.shape[0])
+        res = np.zeros((height * scale, width * scale))
+        for freq1 in freq_index:
+            for freq2, ampl in freq_to_ampl.items():
+                if abs(freq1 - freq2) <= epsilson:
+                    for i in range(scale):
+                        for j in range(scale):
+                            res[freq_index[freq1][0] * scale + i, freq_index[freq1][1] * scale + j] = ampl
+                    break
         return res
 
 
@@ -81,6 +98,7 @@ if __name__ == "__main__":
     #print(freq_to_ampl[i_test])
     img_constructed = simEng.construct_image(f_map, freq_to_ampl, 2, 2)
     #print(img_constructed[0, 1])
-
-
+    print(img_constructed.shape)
+    plt.imshow(img_constructed, origin='lower')
+    plt.show()
 
