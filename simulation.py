@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from binary_images import BinaryImage
 from periods import PeriodGenerator
 import math
 
@@ -78,25 +77,26 @@ class SimulationEngine:
 
 
 if __name__ == "__main__":
-    simEng = SimulationEngine(0.1)
-    simEng.load_data()
+    t_step = 1 / 60
+    simEng = SimulationEngine(t_step, pattern_shape=(8, 8))
+    simEng.load_data(data_path='./raw_data/T_60fps_8X8_4min.npy')
     frame, width, height = simEng.get_data_shape()
     print("({:d}, {:d}, {:d})".format(frame, width, height))
 
     ft, freq = simEng.do_fft()
-    #plt.plot(freq, ft)
+    freq_shape = freq.shape
+    print("freq points:", freq_shape)
+    #plt.plot(freq[:300], ft[:300])
     #plt.show()
 
-    i_test = 5 / 3
     simEng.freq_map()
     f_map = simEng.get_freq_map()
-    print(f_map)
-    print(i_test in freq)
-    print(i_test in f_map)
+    #print(f_map)
+
 
     freq_to_ampl = simEng.wrap_ft_results(freq, ft)
     #print(freq_to_ampl[i_test])
-    img_constructed = simEng.construct_image(f_map, freq_to_ampl, 2, 2)
+    img_constructed = simEng.construct_image(f_map, freq_to_ampl, 8, 8, 10)
     #print(img_constructed[0, 1])
     print(img_constructed.shape)
     plt.imshow(img_constructed, origin='lower')
