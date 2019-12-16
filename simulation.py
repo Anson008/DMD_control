@@ -55,7 +55,7 @@ class SimulationEngine:
     def wrap_ft_results(freq, ft):
         return dict(zip(freq, ft))
 
-    def construct_image(self, freq_index, freq_to_ampl, height, width, scale=5):
+    def construct_image(self, freq_index, freq_to_ampl, height, width, scale=5, epsilson=0.001):
         """
         :freq_index: dictionary, frequency-to-index map obtained from 'freq_map' method.
         :freq_to_ampl: dictionary, frequency-to-amplitude map obtained from 'wrap_ft_results' method.
@@ -64,7 +64,6 @@ class SimulationEngine:
         :scale: int, scale factor to enlarge the image.
         :return: numpy array, scaled image data.
         """
-        epsilson = 5 * (1 / self._data.shape[0])
         res = np.zeros((height * scale, width * scale))
         for freq1 in freq_index:
             for freq2, ampl in freq_to_ampl.items():
@@ -79,7 +78,7 @@ class SimulationEngine:
 if __name__ == "__main__":
     t_step = 1 / 60
     simEng = SimulationEngine(t_step, pattern_shape=(8, 8))
-    simEng.load_data(data_path='./raw_data/T_60fps_8X8_4min.npy')
+    simEng.load_data(data_path='./raw_data/60fps_reference_24fps_8X8_sample_2min.npy')
     frame, width, height = simEng.get_data_shape()
     print("({:d}, {:d}, {:d})".format(frame, width, height))
 
@@ -96,7 +95,7 @@ if __name__ == "__main__":
 
     freq_to_ampl = simEng.wrap_ft_results(freq, ft)
     #print(freq_to_ampl[i_test])
-    img_constructed = simEng.construct_image(f_map, freq_to_ampl, 8, 8, 10)
+    img_constructed = simEng.construct_image(f_map, freq_to_ampl, 8, 8, 10, epsilson=2*(1 / frame))
     #print(img_constructed[0, 1])
     print(img_constructed.shape)
     plt.imshow(img_constructed, origin='lower')

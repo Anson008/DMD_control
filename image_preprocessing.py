@@ -34,16 +34,12 @@ def preview(data):
 
 
 if __name__ == "__main__":
-    test_path = 'E:/Data_exp/test_img'
+    # test_path = 'E:/Data_exp/test_img'
     start = time.time()
-    images = read_images(path=test_path)
+    images = read_images(path='E:/Data_exp/60fps_reference_24fps_8X8_sample_2min_files')
     # print("Image shape:", images.shape)
-    save_image_to_npy(images, filename='test_imgs.npy')
+    save_image_to_npy(images, filename='60fps_reference_24fps_8X8_sample_2min_files.npy')
     end = time.time()
     print("It took {:.2f} seconds to convert the image data to .npy format.".format(end - start))
 
-    load_path = 'E:/code_xz/DMD_control/raw_data/test_imgs.npy'
-    images_loaded = np.load(load_path)
-    print(images_loaded.shape)
-    print(images.dtype)
 
