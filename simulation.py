@@ -44,12 +44,20 @@ class SimulationEngine:
     def get_data_shape(self):
         return self._data.shape
 
-    def do_fft(self):
+    def get_data(self):
+        return self._data
+
+    @staticmethod
+    def cut_off(data, threshold=127):
+        data[data <= threshold] = 0
+        return data
+
+    def fft(self):
         avg = np.mean(self._data, axis=(1, 2))
         ft_abs = np.abs(np.fft.fft(avg))
         n = avg.size
         freq = np.fft.fftfreq(n, d=self._t_step)
-        return ft_abs[1:math.ceil(frame / 2)], freq[1:math.ceil(frame / 2)]
+        return ft_abs[1:math.ceil(n / 2)], freq[1:math.ceil(n / 2)]
 
     @staticmethod
     def wrap_ft_results(freq, ft):
@@ -78,7 +86,7 @@ class SimulationEngine:
 if __name__ == "__main__":
     t_step = 1 / 60
     simEng = SimulationEngine(t_step, pattern_shape=(8, 8))
-    simEng.load_data(data_path='./raw_data/60fps_reference_24fps_8X8_sample_2min.npy')
+    simEng.load_data(data_path='./raw_data/image_T_8X8_60fps.npy')
     frame, width, height = simEng.get_data_shape()
     print("({:d}, {:d}, {:d})".format(frame, width, height))
 
