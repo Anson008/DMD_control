@@ -59,6 +59,12 @@ class SimulationEngine:
         freq = np.fft.fftfreq(n, d=self._t_step)
         return ft_abs[1:math.ceil(n / 2)], freq[1:math.ceil(n / 2)]
 
+    def cross_correlation(self, data, n=10):
+        avg = np.mean(data, axis=(1, 2))
+        cs = np.abs(np.conj(np.fft.fft(avg[:n])) * np.fft.fft(avg[n: 2 * n]))
+        freq = np.fft.fftfreq(n, d=self._t_step)
+        return cs[1:math.ceil(n / 2)], freq[1:math.ceil(n / 2)]
+
     @staticmethod
     def wrap_ft_results(freq, ft):
         return dict(zip(freq, ft))
