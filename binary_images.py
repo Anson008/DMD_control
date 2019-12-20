@@ -56,6 +56,14 @@ class BinaryImage(object):
                     else:
                         self._pixels[z][y][x] = 0
 
+    def generate_sinusoidal_images(self, t=2000):
+        self._pixels = np.zeros((self._frames, self._height * self._xy_scale, self._width * self._xy_scale), dtype=np.uint8)
+        for y in range(self._height * self._xy_scale):
+            for x in range(self._width * self._xy_scale):
+                # first define the mapping between the index of period value and (y, x)
+                i_period = (x // self._xy_scale) + self._width * (y // self._xy_scale)
+                self._pixels[:, y, x] = 128 * np.sin(2 * np.pi / self._periods[i_period] * np.linspace(0, t, num=self._frames)) + 127
+
     def print_through_time(self, xy_range):
         """
         :xy_range: list of tuple, specify the (x, y) range of image we want to print out along z axis.
@@ -75,18 +83,10 @@ class BinaryImage(object):
         cv2.destroyAllWindows()
 
     def add_padding(self):
-        """
-
-        :return: numpy array, padded array.
-        """
         self._pixels = np.pad(self._pixels, ((0, 0), (self._padding[0][0], self._padding[0][1]), (self._padding[1][0], self._padding[1][1])),
                               'constant', constant_values=((0, 0),))
 
     def undo_padding(self):
-        """
-        :para width: tuple, ((before1, after1), (before2, after2)) specifies the number of values removed against the edges of each axis.
-        :return: numpy array, padded array.
-        """
         self._pixels = self._pixels[:, self._padding[0][0]:-self._padding[0][1], self._padding[1][0]:-self._padding[1][1]]
 
     def make_calibration_image(self):
@@ -128,7 +128,7 @@ class BinaryImage(object):
             file_path = directory + "/" + filename + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
             cv2.imwrite(file_path, self._pixels[z, :, :])
 
-    def make_binary_video(self, fps, directory='./videos', filename='video1', fmt='.avi'):
+    def make_binary_video(self, fps, directory='./videos', filename='video1', fmt='.avi', threshold=127):
         """
         Save image sequence as a video to user specified directory.
         :para fps: int, frame rate of the video.
@@ -144,8 +144,19 @@ class BinaryImage(object):
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
         for z in range(fs):
             # Convert gray scale to binary.
-            thresh, frame_b = cv2.threshold(self._pixels[z, :, :], 127, 255, cv2.THRESH_BINARY)
+            thresh, frame_b = cv2.threshold(self._pixels[z, :, :], threshold, 255, cv2.THRESH_BINARY)
             video.write(frame_b)
+        video.release()
+
+    def make_grayscale_video(self, fps, directory='./videos', filename='video1', fmt='.avi'):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        fs, w, h = self._pixels.shape
+        file_path = directory + '/' + filename + fmt
+        fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+        video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
+        for z in range(fs):
+            video.write(self._pixels[z, :, :])
         video.release()
 
 
@@ -155,15 +166,23 @@ if __name__ == "__main__":
     prime_num = periods.prime_numbers()
 
     # Set image padding, create an object of BinaryImage class.
-    padding = ((5, 5), (5, 5))
-    binary_img = BinaryImage(20000, 2, 2, 10, padding, prime_num)
+    padding = ((200, 200), (200, 200))
+    binary_img = BinaryImage(200, 8, 8, 5, padding, prime_num)
 
     # Get image shape.
     frames, height, width, scale = binary_img.get_img_shape()
 
     # Generate image sequence without padding.
+    # start = time.time()
+    # binary_img.generate_images()
+    """print("\nIt took {:.2f} s to generate image sequence of shape "
+          "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
+          "\nThe shape of actual images should be ({:d}, {:d}, {:d}), without taking account into padding."
+          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
+
+    # Generate sinusoidal image sequence
     start = time.time()
-    binary_img.generate_images()
+    binary_img.generate_sinusoidal_images(t=20)
     print("\nIt took {:.2f} s to generate image sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual images should be ({:d}, {:d}, {:d}), without taking account into padding."
@@ -173,7 +192,7 @@ if __name__ == "__main__":
     # binary_img.print_through_time([(0, 2), (0, 2)])
 
     # Add padding to images.
-    # binary_img.add_padding()
+    binary_img.add_padding()
 
     # Undo padding to images if necessary.
     # binary_img.undo_padding(pad_width=padding)
@@ -186,14 +205,14 @@ if __name__ == "__main__":
     # print("\nShape of generated images:", image.shape)
 
     # Save pixel values to .npy file if necessary.
-    binary_img.save_to_npy()
+    binary_img.save_to_npy(filename='test_sin')
 
-    # Make calibration images if necessary.
+    # Make calibration images.
     # calib_img = binary_img.make_calibration_image()
     # binary_img.save_image(calib_img, filename='calib_8by8')
 
     # binary_img.make_image_sequence()
-    # binary_img.make_binary_video(fps=24, filename='24KFrames_24Fps_8by8_200Padding')
+    binary_img.make_binary_video(fps=10, filename='test_sin')
 
 
 
