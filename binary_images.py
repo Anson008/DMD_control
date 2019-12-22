@@ -56,13 +56,16 @@ class BinaryImage(object):
                     else:
                         self._pixels[z][y][x] = 0
 
-    def generate_sinusoidal_images(self, t=2000):
+    def generate_sinusoidal_images(self, time=2000):
         self._pixels = np.zeros((self._frames, self._height * self._xy_scale, self._width * self._xy_scale), dtype=np.uint8)
         for y in range(self._height * self._xy_scale):
             for x in range(self._width * self._xy_scale):
                 # first define the mapping between the index of period value and (y, x)
-                i_period = (x // self._xy_scale) + self._width * (y // self._xy_scale)
-                self._pixels[:, y, x] = 128 * np.sin(2 * np.pi / self._periods[i_period] * np.linspace(0, t, num=self._frames)) + 127
+                # i_period = (x // self._xy_scale) + self._width * (y // self._xy_scale) + 1
+                # self._pixels[:, y, x] = 128 * np.sin(2 * np.pi / self._periods[i_period] * np.linspace(0, time, num=self._frames)) + 127
+                freq = ((x // self._xy_scale) + self._width * (y // self._xy_scale) + 1) / 10
+                self._pixels[:, y, x] = 128 * np.sin(2 * np.pi * freq *
+                                                     np.linspace(0, time, num=self._frames)) + 127
 
     def print_through_time(self, xy_range):
         """
@@ -167,7 +170,7 @@ if __name__ == "__main__":
 
     # Set image padding, create an object of BinaryImage class.
     padding = ((200, 200), (200, 200))
-    binary_img = BinaryImage(200, 8, 8, 5, padding, prime_num)
+    binary_img = BinaryImage(200000, 8, 8, 5, padding, prime_num)
 
     # Get image shape.
     frames, height, width, scale = binary_img.get_img_shape()
@@ -182,7 +185,7 @@ if __name__ == "__main__":
 
     # Generate sinusoidal image sequence
     start = time.time()
-    binary_img.generate_sinusoidal_images(t=20)
+    binary_img.generate_sinusoidal_images(time=2000)
     print("\nIt took {:.2f} s to generate image sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual images should be ({:d}, {:d}, {:d}), without taking account into padding."
@@ -205,14 +208,17 @@ if __name__ == "__main__":
     # print("\nShape of generated images:", image.shape)
 
     # Save pixel values to .npy file if necessary.
-    binary_img.save_to_npy(filename='test_sin')
+    # binary_img.save_to_npy(filename='sinusoidal_200kFrames_20fps_8X8_natNumFreq')
 
     # Make calibration images.
     # calib_img = binary_img.make_calibration_image()
     # binary_img.save_image(calib_img, filename='calib_8by8')
 
     # binary_img.make_image_sequence()
-    binary_img.make_binary_video(fps=10, filename='test_sin')
+    # binary_img.make_binary_video(fps=20, filename='d')
+
+    # Make gray scale video
+    binary_img.make_grayscale_video(fps=20, filename='sinusoidal_200kFrames_20fps_8X8_natNumFreq')
 
 
 
