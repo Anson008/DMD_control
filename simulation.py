@@ -52,8 +52,12 @@ class SimulationEngine:
         data[data <= threshold] = 0
         return data
 
-    def fft(self):
-        avg = np.mean(self._data, axis=(1, 2))
+    def fft(self, data):
+        """
+        :data: numpy array, the data to process.
+        :return: tuple, (ft amplitude, ft frequency)
+        """
+        avg = np.mean(data, axis=(1, 2))
         ft_abs = np.abs(np.fft.fft(avg))
         n = avg.size
         freq = np.fft.fftfreq(n, d=self._t_step)
@@ -96,7 +100,9 @@ if __name__ == "__main__":
     frame, width, height = simEng.get_data_shape()
     print("({:d}, {:d}, {:d})".format(frame, width, height))
 
-    ft, freq = simEng.do_fft()
+    data = simEng.get_data()
+    data_cutted = simEng.cut_off(data)
+    ft, freq = simEng.fft(data_cutted)
     freq_shape = freq.shape
     print("freq points:", freq_shape)
     #plt.plot(freq[:300], ft[:300])
