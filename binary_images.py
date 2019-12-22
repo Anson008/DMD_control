@@ -56,14 +56,14 @@ class BinaryImage(object):
                     else:
                         self._pixels[z][y][x] = 0
 
-    def generate_sinusoidal_images(self, time=2000):
+    def generate_sinusoidal_images(self, time=2000, freq_multiplier=0.1):
         self._pixels = np.zeros((self._frames, self._height * self._xy_scale, self._width * self._xy_scale), dtype=np.uint8)
         for y in range(self._height * self._xy_scale):
             for x in range(self._width * self._xy_scale):
                 # first define the mapping between the index of period value and (y, x)
                 # i_period = (x // self._xy_scale) + self._width * (y // self._xy_scale) + 1
                 # self._pixels[:, y, x] = 128 * np.sin(2 * np.pi / self._periods[i_period] * np.linspace(0, time, num=self._frames)) + 127
-                freq = ((x // self._xy_scale) + self._width * (y // self._xy_scale) + 1) / 10
+                freq = ((x // self._xy_scale) + self._width * (y // self._xy_scale) + 1) * freq_multiplier
                 self._pixels[:, y, x] = 128 * np.sin(2 * np.pi * freq *
                                                      np.linspace(0, time, num=self._frames)) + 127
 
@@ -169,8 +169,8 @@ if __name__ == "__main__":
     prime_num = periods.prime_numbers()
 
     # Set image padding, create an object of BinaryImage class.
-    padding = ((200, 200), (200, 200))
-    binary_img = BinaryImage(200000, 8, 8, 5, padding, prime_num)
+    padding = ((20, 20), (20, 20))
+    binary_img = BinaryImage(20000, 4, 4, 5, padding, prime_num)
 
     # Get image shape.
     frames, height, width, scale = binary_img.get_img_shape()
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     # print("\nShape of generated images:", image.shape)
 
     # Save pixel values to .npy file if necessary.
-    # binary_img.save_to_npy(filename='sinusoidal_200kFrames_20fps_8X8_natNumFreq')
+    binary_img.save_to_npy(filename='testSin_20kFrames_4X4')
 
     # Make calibration images.
     # calib_img = binary_img.make_calibration_image()
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     # binary_img.make_binary_video(fps=20, filename='d')
 
     # Make gray scale video
-    binary_img.make_grayscale_video(fps=20, filename='sinusoidal_200kFrames_20fps_8X8_natNumFreq')
+    # binary_img.make_grayscale_video(fps=20, filename='sinusoidal_200kFrames_20fps_8X8_natNumFreq')
 
 
 

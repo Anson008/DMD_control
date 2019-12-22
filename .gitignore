@@ -2,7 +2,7 @@ test*.py
 *.avi
 *.png
 
-
+**/.idea
 **/videos
 **/img_sequence
 **/raw_data
