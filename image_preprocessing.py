@@ -58,9 +58,9 @@ if __name__ == "__main__":
     # test_path = 'E:/Data_exp/test_img'
     start = time.time()
     # images = read_images(path='E:/Data_exp/60fps_reference_24fps_8X8_sample_2min_files')
-    images = read_video(path='E:/Data_exp/T_topleft_40fps_2ms_8x8_2fps.avi')
+    images = read_video(path='E:/Data_exp/T_bottomright_120fps_sin.avi')
     # print("Image shape:", images.shape)
-    save_image_to_npy(images, filename='T_topleft_40fps_2ms_8x8_2fps.npy')
+    save_image_to_npy(images, filename='T_bottomright_120fps_sin.npy')
     end = time.time()
     print("It took {:.2f} seconds to convert the image data to .npy format.".format(end - start))
 

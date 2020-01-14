@@ -56,16 +56,16 @@ class BinaryImage(object):
                     else:
                         self._pixels[z][y][x] = 0
 
-    def generate_sinusoidal_images(self, time=2000, freq_multiplier=0.1):
+    def generate_sinusoidal_images(self, time=2000, base_freq=0.1):
         self._pixels = np.zeros((self._frames, self._height * self._xy_scale, self._width * self._xy_scale), dtype=np.uint8)
         for y in range(self._height * self._xy_scale):
             for x in range(self._width * self._xy_scale):
                 # first define the mapping between the index of period value and (y, x)
                 # i_period = (x // self._xy_scale) + self._width * (y // self._xy_scale) + 1
                 # self._pixels[:, y, x] = 128 * np.sin(2 * np.pi / self._periods[i_period] * np.linspace(0, time, num=self._frames)) + 127
-                freq = ((x // self._xy_scale) + self._width * (y // self._xy_scale) + 1) * freq_multiplier
+                freq = ((x // self._xy_scale) + self._width * (y // self._xy_scale) + 1) * base_freq
                 self._pixels[:, y, x] = 128 * np.sin(2 * np.pi * freq *
-                                                     np.linspace(0, time, num=self._frames)) + 127
+                                                     np.linspace(0, time, num=self._frames, endpoint=False)) + 127
 
     def print_through_time(self, xy_range):
         """
