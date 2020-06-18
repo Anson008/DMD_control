@@ -5,95 +5,126 @@ import os
 from periods import PeriodGenerator
 
 
-class BinaryImage(object):
-    def __init__(self, frames, width, height, xy_scale, padding, periods):
+class PatternSequence:
+    """Generate gray scale pattern sequence."""
+
+    def __init__(self, frames, width, height, scale, padding, periods):
         """
-        :_frames: int, number of frames in the image sequence
-        :_width: int, image width
-        :_height: int, image height
-        :_periods: list of int, the periods of signals along z axis specifying by (y, x)
-        :_width: tuple, ((before1, after1), (before2, after2)) specifies the number of values padded to the edges of each axis.
-        :_pixels: numpy array, store the pixel values of the final image
+        :arg frames: int, number of frames in the pattern sequence
+        :arg width: int, pattern width
+        :arg height: int, pattern height
+        :arg periods: list of int, the periods of signal at position (x, y)
+        :arg padding: tuple, ((before1, after1), (before2, after2)) specifies the number of values padded to the edges
+                    of each axis. It is the width of a frame added to the pattern.
+        :arg scale: int, the factor by which a single pixel is enlarged. For example, enlarge a native 4*4 pattern by
+                    scale 10 will produce a pattern of actual size 40*40, i.e, each pixel is enlarged by 10 times but
+                    the native structure of the pattern is still represented by a 4*4 grid.
+
+        Attributes
+        :_pattern: numpy array, store the pixel values of pattern.
         """
         self._frames = frames
         self._width = width
         self._height = height
-        self._xy_scale = xy_scale
-        self._padding = padding
         self._periods = periods
-        self._pixels = None
+        self._padding = padding
+        self._scale = scale
+        self._pattern = None
 
-    def get_img_shape(self):
+    def get_shape(self):
         """
-        :return: tuple, the shape of image sequence in (frames, height, width).
-        """
-        return self._frames, self._height, self._width, self._xy_scale
+        Return the shape of pattern.
 
-    def get_pixels(self):
+        :return: tuple, the shape of pattern sequence in (frames, height, width).
         """
-        :return: numpy array, pixel values of the image sequence
+        return self._frames, self._height, self._width, self._scale
+
+    def get_pattern(self):
         """
-        return self._pixels
+        Return the pattern sequence.
+
+        :return: numpy array, the pattern sequence
+        """
+        return self._pattern
 
     def save_to_npy(self, directory='./raw_data', filename='test'):
+        """
+        Save the numpy array of pattern sequence to .npy file.
+
+        :arg directory: str, the directory to save file.
+        :arg filename: str, the file name.
+        """
         if not os.path.exists(directory):
             os.makedirs(directory)
         file_path = directory + '/' + filename + '.npy'
-        np.save(file_path, self._pixels)
+        np.save(file_path, self._pattern)
 
-    def generate_images(self):
+
+class PatternSequenceGenerator(PatternSequence):
+    def generate_prime_patterns(self):
         """
-        Generate binary images according to the given periods.
+        Generate binary pattern sequence of which the periods are given by a list of prime numbers.
         """
-        self._pixels = np.zeros((self._frames, self._height * self._xy_scale, self._width * self._xy_scale), dtype=np.uint8)
+        self._pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
         for z in range(self._frames):
-            for y in range(self._height * self._xy_scale):
-                for x in range(self._width * self._xy_scale):
-                    # first define the mapping between the index of period value and (y, x)
-                    i_period = (x // self._xy_scale) + self._width * (y // self._xy_scale)
+            for y in range(self._height * self._scale):
+                for x in range(self._width * self._scale):
+                    # first define the mapping between the index of period value and position (y, x)
+                    i_period = (x // self._scale) + self._width * (y // self._scale)
                     if (z // self._periods[i_period]) % 2 == 0:
-                        self._pixels[z][y][x] = 255
+                        self._pattern[z][y][x] = 255
                     else:
-                        self._pixels[z][y][x] = 0
+                        self._pattern[z][y][x] = 0
 
-    def generate_sinusoidal_images(self, time=2000, base_freq=0.1):
-        self._pixels = np.zeros((self._frames, self._height * self._xy_scale, self._width * self._xy_scale), dtype=np.uint8)
-        for y in range(self._height * self._xy_scale):
-            for x in range(self._width * self._xy_scale):
-                # first define the mapping between the index of period value and (y, x)
-                # i_period = (x // self._xy_scale) + self._width * (y // self._xy_scale) + 1
-                # self._pixels[:, y, x] = 128 * np.sin(2 * np.pi / self._periods[i_period] * np.linspace(0, time, num=self._frames)) + 127
-                freq = ((x // self._xy_scale) + self._width * (y // self._xy_scale) + 1) * base_freq
-                self._pixels[:, y, x] = 128 * np.sin(2 * np.pi * freq *
-                                                     np.linspace(0, time, num=self._frames, endpoint=False)) + 127
-
-    def print_through_time(self, xy_range):
+    def generate_sinusoidal_patterns(self, time=2000, base_freq=0.1):
         """
-        :xy_range: list of tuple, specify the (x, y) range of image we want to print out along z axis.
+        Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal signal.
+        The frequency of the signal for a certain pixel is the multiple of a base frequency and the index of the pixel.
+        For example, a 2*2 pattern has 4 pixels in total. The frequency of first pixel (1, 1) is 1*base_freq, of the second
+        pixel (1, 2) is 2*base_freq, and of the last pixel (2, 2) is 4*base_freq.
+
+        :arg time: int, total length of the signal (pseudo time).
+        :arg base_freq: float, base frequency of the signal, i.e., the frequency of the pixel at upper-left corner.
+        """
+        self._pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
+        for y in range(self._height * self._scale):
+            for x in range(self._width * self._scale):
+                freq = ((x // self._scale) + self._width * (y // self._scale) + 1) * base_freq
+                self._pattern[:, y, x] = 128 * np.sin(2 * np.pi * freq *
+                                                      np.linspace(0, time, num=self._frames, endpoint=False)) + 127
+
+    def look_along_time_axis(self, xy_range):
+        """
+        Print out a selected x-y region of pattern sequence along time axis.
+
+        :xy_range: list of tuple, specify the (x, y) range of pattern we want to print out along z axis (time axis).
                    [(x1, x2), (y1, y2)]
         """
         print("-"*10, "Preview of signal along z axis", "-"*10)
         for y in range(xy_range[1][0], xy_range[1][1]):
             for x in range(xy_range[0][0], xy_range[0][1]):
-                print(self._pixels[:, y, x])
+                print(self._pattern[:, y, x])
         print("-"*10, "End of printing", "-"*10, "\n")
 
     def preview(self):
+        """
+        Preview the
+        """
         for z in range(self._frames):
-            cv2.imshow('Preview of images', self._pixels[z, :, :])
+            cv2.imshow('Preview of patterns', self._pattern[z, :, :])
             if cv2.waitKey(0) == ord('q'):
                 break
         cv2.destroyAllWindows()
 
     def add_padding(self):
-        self._pixels = np.pad(self._pixels, ((0, 0), (self._padding[0][0], self._padding[0][1]), (self._padding[1][0], self._padding[1][1])),
+        self._pattern = np.pad(self._pattern, ((0, 0), (self._padding[0][0], self._padding[0][1]), (self._padding[1][0], self._padding[1][1])),
                               'constant', constant_values=((0, 0),))
 
     def undo_padding(self):
-        self._pixels = self._pixels[:, self._padding[0][0]:-self._padding[0][1], self._padding[1][0]:-self._padding[1][1]]
+        self._pattern = self._pattern[:, self._padding[0][0]:-self._padding[0][1], self._padding[1][0]:-self._padding[1][1]]
 
-    def make_calibration_image(self):
-        w, h = self._width * self._xy_scale, self._height * self._xy_scale
+    def make_calibration_pattern(self):
+        w, h = self._width * self._scale, self._height * self._scale
         img = np.zeros((h, w))
         for i in range(h):
             for j in range(w):
@@ -107,59 +138,59 @@ class BinaryImage(object):
         return img
 
     @staticmethod
-    def save_image(img, directory='./calibration', filename='calib_01', fmt='.png'):
+    def save_pattern(img, directory='./calibration', filename='calib_01', fmt='.png'):
         """
-        Save a single image to a user specified directory.
+        Save a single pattern to a user specified directory.
         :para directory: string, destination directory.
         :para filename: string, file name without extension.
-        :para fmt: string, format of the image files. Default is '.png'.
+        :para fmt: string, format of the pattern files. Default is '.png'.
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
         file_path = directory + "/" + filename + fmt
         cv2.imwrite(file_path, img)
 
-    def make_image_sequence(self, directory='./img_sequence', filename='test', fmt='.png'):
+    def make_pattern_sequence(self, directory='./img_sequence', filename='test', fmt='.png'):
         """
-        Save image sequence to a user specified directory, with auto naming from "0" to "# of images - 1".
+        Save pattern sequence to a user specified directory, with auto naming from "0" to "# of patterns - 1".
         :para directory: string, destination directory.
-        :para fmt: string, format of the image files.
+        :para fmt: string, format of the pattern files.
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
         for z in range(self._frames):
             file_path = directory + "/" + filename + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
-            cv2.imwrite(file_path, self._pixels[z, :, :])
+            cv2.imwrite(file_path, self._pattern[z, :, :])
 
     def make_binary_video(self, fps, directory='./videos', filename='video1', fmt='.avi', threshold=127):
         """
-        Save image sequence as a video to user specified directory.
+        Save pattern sequence as a video to user specified directory.
         :para fps: int, frame rate of the video.
         :para directory: string, destination directory.
         :para filename: string, file name of the video, without extension.
-        :para fmt: string, format of the image files.
+        :para fmt: string, format of the pattern files.
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
-        fs, w, h = self._pixels.shape
+        fs, w, h = self._pattern.shape
         file_path = directory + '/' + filename + fmt
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
         for z in range(fs):
             # Convert gray scale to binary.
-            thresh, frame_b = cv2.threshold(self._pixels[z, :, :], threshold, 255, cv2.THRESH_BINARY)
+            thresh, frame_b = cv2.threshold(self._pattern[z, :, :], threshold, 255, cv2.THRESH_BINARY)
             video.write(frame_b)
         video.release()
 
     def make_grayscale_video(self, fps, directory='./videos', filename='video1', fmt='.avi'):
         if not os.path.exists(directory):
             os.makedirs(directory)
-        fs, w, h = self._pixels.shape
+        fs, w, h = self._pattern.shape
         file_path = directory + '/' + filename + fmt
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
         for z in range(fs):
-            video.write(self._pixels[z, :, :])
+            video.write(self._pattern[z, :, :])
         video.release()
 
 
@@ -168,53 +199,53 @@ if __name__ == "__main__":
     periods = PeriodGenerator()
     prime_num = periods.prime_numbers()
 
-    # Set image padding, create an object of BinaryImage class.
+    # Set pattern padding, create an object of Binarypattern class.
     padding = ((20, 20), (20, 20))
-    binary_img = BinaryImage(20000, 4, 4, 5, padding, prime_num)
+    binary_img = Binarypattern(200000, 8, 8, 5, padding, prime_num)
 
-    # Get image shape.
+    # Get pattern shape.
     frames, height, width, scale = binary_img.get_img_shape()
 
-    # Generate image sequence without padding.
+    # Generate pattern sequence without padding.
     # start = time.time()
-    # binary_img.generate_images()
-    """print("\nIt took {:.2f} s to generate image sequence of shape "
+    # binary_img.generate_patterns()
+    """print("\nIt took {:.2f} s to generate pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
-          "\nThe shape of actual images should be ({:d}, {:d}, {:d}), without taking account into padding."
+          "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into padding."
           .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
 
-    # Generate sinusoidal image sequence
+    # Generate sinusoidal pattern sequence
     start = time.time()
-    binary_img.generate_sinusoidal_images(time=2000)
-    print("\nIt took {:.2f} s to generate image sequence of shape "
+    binary_img.generate_sinusoidal_patterns(time=2000)
+    print("\nIt took {:.2f} s to generate pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
-          "\nThe shape of actual images should be ({:d}, {:d}, {:d}), without taking account into padding."
+          "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into padding."
           .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
 
-    # Preview image pixel values along time axis.
+    # Preview pattern pixel values along time axis.
     # binary_img.print_through_time([(0, 2), (0, 2)])
 
-    # Add padding to images.
+    # Add padding to patterns.
     binary_img.add_padding()
 
-    # Undo padding to images if necessary.
+    # Undo padding to patterns if necessary.
     # binary_img.undo_padding(pad_width=padding)
 
-    # Preview image sequence frame by frame if necessary.
+    # Preview pattern sequence frame by frame if necessary.
     # binary_img.preview()
 
     # Get pixel values if necessary.
-    # image = binary_img.get_pixels()
-    # print("\nShape of generated images:", image.shape)
+    # pattern = binary_img.get_pattern()
+    # print("\nShape of generated patterns:", pattern.shape)
 
     # Save pixel values to .npy file if necessary.
-    binary_img.save_to_npy(filename='testSin_20kFrames_4X4')
+    binary_img.save_to_npy(filename='testSin_200kFrames_8X8')
 
-    # Make calibration images.
-    # calib_img = binary_img.make_calibration_image()
-    # binary_img.save_image(calib_img, filename='calib_8by8')
+    # Make calibration patterns.
+    # calib_img = binary_img.make_calibration_pattern()
+    # binary_img.save_pattern(calib_img, filename='calib_8by8')
 
-    # binary_img.make_image_sequence()
+    # binary_img.make_pattern_sequence()
     # binary_img.make_binary_video(fps=20, filename='d')
 
     # Make gray scale video
