@@ -6,7 +6,9 @@ from periods import PeriodGenerator
 
 
 class PatternSequence:
-    """Generate gray scale pattern sequence."""
+    """
+    Generate gray scale pattern sequence.
+    """
 
     def __init__(self, frames, width, height, scale, padding, periods):
         """
@@ -63,7 +65,10 @@ class PatternSequence:
 class PatternSequenceGenerator(PatternSequence):
     def generate_prime_patterns(self):
         """
-        Generate binary pattern sequence of which the periods are given by a list of prime numbers.
+        Generate binary pattern sequence. Along the time axis, the pixel values forms a square wave (binary signal).
+        The period of the wave at each pixel is the ith prime number, where i is the index of the pixel. For example,
+        a 2*2 pattern has 4 pixels in total. The period of the first pixel (1, 1) is the first prime number 2. The period
+        of the last pixel (2, 2) is 7 which is the 4th prime number.
         """
         self._pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
         for z in range(self._frames):
@@ -78,10 +83,10 @@ class PatternSequenceGenerator(PatternSequence):
 
     def generate_sinusoidal_patterns(self, time=2000, base_freq=0.1):
         """
-        Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal signal.
-        The frequency of the signal for a certain pixel is the multiple of a base frequency and the index of the pixel.
-        For example, a 2*2 pattern has 4 pixels in total. The frequency of first pixel (1, 1) is 1*base_freq, of the second
-        pixel (1, 2) is 2*base_freq, and of the last pixel (2, 2) is 4*base_freq.
+        Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal wave.
+        The frequency of the wave at each pixel is the multiple of a base frequency and the index of the pixel.
+        For example, a 2*2 pattern has 4 pixels in total. The frequency of the first pixel (1, 1) is 1*base_freq.
+        The frequency of the last pixel (2, 2) is 4*base_freq.
 
         :arg time: int, total length of the signal (pseudo time).
         :arg base_freq: float, base frequency of the signal, i.e., the frequency of the pixel at upper-left corner.
@@ -108,7 +113,7 @@ class PatternSequenceGenerator(PatternSequence):
 
     def preview(self):
         """
-        Preview the
+        Preview every pattern in the pattern sequence. Enter 'q' to exit the preview.
         """
         for z in range(self._frames):
             cv2.imshow('Preview of patterns', self._pattern[z, :, :])
@@ -116,11 +121,18 @@ class PatternSequenceGenerator(PatternSequence):
                 break
         cv2.destroyAllWindows()
 
-    def add_padding(self):
-        self._pattern = np.pad(self._pattern, ((0, 0), (self._padding[0][0], self._padding[0][1]), (self._padding[1][0], self._padding[1][1])),
-                              'constant', constant_values=((0, 0),))
+    def pad(self):
+        """
+        Pad the edge of patterns.
+        """
+        self._pattern = np.pad(self._pattern,
+                               ((0, 0), (self._padding[0][0], self._padding[0][1]),
+                                (self._padding[1][0], self._padding[1][1])), 'constant')
 
-    def undo_padding(self):
+    def undo_pad(self):
+        """
+        Undo pad.
+        """
         self._pattern = self._pattern[:, self._padding[0][0]:-self._padding[0][1], self._padding[1][0]:-self._padding[1][1]]
 
     def make_calibration_pattern(self):
