@@ -12,18 +12,16 @@ class PatternSequence:
 
     def __init__(self, frames, width, height, scale, periods):
         """
-        :arg frames: int, number of frames in the pattern sequence
-        :arg width: int, pattern width
-        :arg height: int, pattern height
-        :arg periods: list of int, the periods of signal at position (x, y)
-        :arg padding: tuple, ((before1, after1), (before2, after2)) specifies the number of values padded to the edges
-                    of each axis. It is the width of a frame added to the pattern.
-        :arg scale: int, the factor by which a single pixel is enlarged. For example, enlarge a native 4*4 pattern by
+        :param frames: int. The number of frames in the pattern sequence
+        :param width: int. Pattern width
+        :param height: int. Pattern height
+        :param periods: list of int. The periods of signal at position (x, y)
+        :param scale: int. The factor by which a single pixel is enlarged. For example, enlarge a native 4*4 pattern by
                     scale 10 will produce a pattern of actual size 40*40, i.e, each pixel is enlarged by 10 times but
                     the native structure of the pattern is still represented by a 4*4 grid.
 
         Attributes
-        :_pattern: numpy array, store the pixel values of pattern.
+        :_pattern: numpy array. Store the pixel values of pattern.
         """
         self._frames = frames
         self._width = width
@@ -37,7 +35,7 @@ class PatternSequence:
         """
         Return the shape of pattern.
 
-        :return: tuple, the shape of pattern sequence in (frames, height, width).
+        :return: tuple. The shape of pattern sequence in (frames, height, width).
         """
         return self._frames, self._height, self._width, self._scale
 
@@ -45,7 +43,7 @@ class PatternSequence:
         """
         Return the pattern sequence.
 
-        :return: numpy array, the pattern sequence
+        :return: numpy array. The pattern sequence.
         """
         return self._pattern
 
@@ -53,8 +51,8 @@ class PatternSequence:
         """
         Save the numpy array of pattern sequence to .npy file.
 
-        :arg directory: str, the directory to save file.
-        :arg filename: str, the file name.
+        :param directory: str. The directory to save file.
+        :param filename: str. The file name.
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -88,8 +86,8 @@ class PatternSequenceGenerator(PatternSequence):
         For example, a 2*2 pattern has 4 pixels in total. The frequency of the first pixel (1, 1) is 1*base_freq.
         The frequency of the last pixel (2, 2) is 4*base_freq.
 
-        :arg time: int, total length of the signal (pseudo time).
-        :arg base_freq: float, base frequency of the signal, i.e., the frequency of the pixel at upper-left corner.
+        :param time: int. Total length of the signal (pseudo time).
+        :param base_freq: float. Base frequency of the signal, i.e., the frequency of the pixel at upper-left corner.
         """
         self._pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
         for y in range(self._height * self._scale):
@@ -102,8 +100,8 @@ class PatternSequenceGenerator(PatternSequence):
         """
         Print out a selected x-y region of pattern sequence along time axis.
 
-        :xy_range: list of tuple, specify the (x, y) range of pattern we want to print out along z axis (time axis).
-                   [(x1, x2), (y1, y2)]
+        :param xy_range: list of tuple. Specify the (x, y) range of pattern we want to print out along z axis
+                        (time axis). [(x1, x2), (y1, y2)]
         """
         print("-"*10, "Preview of signal along z axis", "-"*10)
         for y in range(xy_range[1][0], xy_range[1][1]):
@@ -153,51 +151,50 @@ class PatternSequenceGenerator(PatternSequence):
         return img
 
     @staticmethod
-    def save_single_pattern(img, directory='./calibration', filename='calib_01', fmt='.png'):
+    def save_single_pattern(img, directory='./calibration', filename='calib_01.png'):
         """
         Save a single pattern to a user specified directory.
 
-        :arg directory: str, destination directory.
-        :arg filename: str, file name without extension.
-        :arg fmt: str, format of the pattern files. Default is '.png'.
+        :param directory: str. Destination directory.
+        :param filename: str. File name with extension.
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
-        file_path = directory + "/" + filename + fmt
+        file_path = os.path.join(directory, filename)
         cv2.imwrite(file_path, img)
 
-    def save_to_images(self, directory='./img_sequence', filename='test', fmt='.png'):
+    def save_to_images(self, directory='./img_sequence', prefix='test', fmt='.png'):
         """
         Save pattern sequence as images to a user specified directory, with auto naming from "0" to "(No. of patterns) - 1".
 
-        :arg directory: str, destination directory.
-        :arg filename: str,
-        :arg fmt: string, format of the pattern files. Default is '.png'
+        :param directory: str. Destination directory.
+        :param prefix: str. The prefix of file names. Index will be appended automatically when generating full names.
+        :param fmt: str. Format of the pattern files. Default is '.png'
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
         for z in range(self._frames):
-            file_path = directory + "/" + filename + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
+            filename = prefix + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
+            file_path = os.path.join(directory, filename)
             cv2.imwrite(file_path, self._pattern[z, :, :])
 
-    def save_to_video(self, fps, directory='./videos', filename='video1', fmt='.avi',
+    def save_to_video(self, fps, directory='./videos', filename='video1.avi',
                       pattern_type="grayscale", threshold=127):
         """
         Save pattern sequence as a video to user specified directory.
 
-        :arg fps: int, frame rate of the video.
-        :arg directory: str, destination directory.
-        :arg filename: str, file name of the video, without extension.
-        :arg fmt: str, format of the pattern files.
-        :arg pattern_type: str, the type of patterns with two options "binary" or "grayscale". Default is "grayscale".
-        :arg threshold: int, set the threshold to convert pixel values in 0~255 to binary values 0 and 1. For example,
+        :param fps: int. Frame rate of the video.
+        :param directory: str. Destination directory.
+        :param filename: str. File name of the video. Default extension is '.avi'
+        :param pattern_type: str. The type of patterns with two options "binary" or "grayscale". Default is "grayscale".
+        :param threshold: int. Set the threshold to convert pixel values in 0~255 to binary values 0 and 1. For example,
                         if threshold = 127, any value greater than 127 would be set to 1, and values less than or equal
                         to 127 would be set to 0.
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
         fs, w, h = self._pattern.shape
-        file_path = directory + '/' + filename + fmt
+        file_path = os.path.join(directory, filename)
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
         if pattern_type == "binary":
