@@ -27,7 +27,6 @@ class PatternSequence:
         self._width = width
         self._height = height
         self._periods = periods
-        # padding = padding
         self._scale = scale
         self._pattern = None
 
@@ -119,21 +118,21 @@ class PatternSequenceGenerator(PatternSequence):
                 break
         cv2.destroyAllWindows()
 
-    def pad(self, padding=((20, 20), (20, 20))):
+    def pad(self, pad=((20, 20), (20, 20))):
         """
         Pad the edge of patterns.
         """
         self._pattern = np.pad(self._pattern,
-                               ((0, 0), (padding[0][0], padding[0][1]),
-                                (padding[1][0], padding[1][1])), 'constant')
+                               ((0, 0), (pad[0][0], pad[0][1]),
+                                (pad[1][0], pad[1][1])), 'constant')
 
-    def undo_pad(self, padding):
+    def undo_pad(self, pad):
         """
         Undo pad.
         """
-        self._pattern = self._pattern[:, padding[0][0]:-padding[0][1], padding[1][0]:-padding[1][1]]
+        self._pattern = self._pattern[:, pad[0][0]:-pad[0][1], pad[1][0]:-pad[1][1]]
 
-    def make_calibration_pattern(self, padding):
+    def make_calibration_pattern(self, pad):
         """
         Generate a pattern of "丰" in case a known pattern is needed to test the program or do simulations.
         """
@@ -146,7 +145,7 @@ class PatternSequenceGenerator(PatternSequence):
                        int(0.7*h) <= i <= int(0.9*h))
                 c1j = (int(0.4*w) <= j <= int(0.6*w))
                 img[i, j] = 255 if c1i or c1j else 0
-        img = np.pad(img, ((padding[0][0], padding[0][1]), (padding[1][0], padding[1][1])),
+        img = np.pad(img, ((pad[0][0], pad[0][1]), (pad[1][0], pad[1][1])),
                      'constant', constant_values=((0, 0),))
         return img
 
@@ -155,6 +154,7 @@ class PatternSequenceGenerator(PatternSequence):
         """
         Save a single pattern to a user specified directory.
 
+        :param img: numpy array. The pattern to be saved as a picture.
         :param directory: str. Destination directory.
         :param filename: str. File name with extension.
         """
@@ -216,37 +216,29 @@ if __name__ == "__main__":
     periods = PeriodGenerator()
     prime_num = periods.prime_numbers()
 
-    # Set pattern padding, create an instant of PatternSequenceGenerator class.
+    # Set pattern pad, create an instant of PatternSequenceGenerator class.
     patt = PatternSequenceGenerator(20000, 8, 8, 5, prime_num)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
 
-    # Generate pattern sequence without padding.
-    # start = time.time()
-    # patt.generate_patterns()
-    """print("\nIt took {:.2f} s to generate pattern sequence of shape "
-          "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
-          "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into padding."
-          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
-
-    # Generate sinusoidal pattern sequence
+    # Generate sinusoidal pattern sequence.
     start = time.time()
     patt.generate_sinusoidal_patterns(time=2000)
     print("\nIt took {:.2f} s to generate pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
-          "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into padding."
+          "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
           .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
 
     # Preview pattern pixel values along time axis.
     # patt.print_through_time([(0, 2), (0, 2)])
 
     # Pad patterns.
-    padding = ((200, 200), (200, 200))
-    patt.pad(padding)
+    pad1 = ((200, 200), (200, 200))
+    patt.pad(pad1)
 
-    # Undo padding to patterns if necessary.
-    # patt.undo_padding(pad_width=padding)
+    # Undo pad to patterns if necessary.
+    # patt.undo_pad(pad_width=pad)
 
     # Preview pattern sequence frame by frame if necessary.
     # patt.preview()
