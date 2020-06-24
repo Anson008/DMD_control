@@ -2,6 +2,7 @@ import numpy as np
 import time
 import cv2
 import os
+import matplotlib.pyplot as plt
 from periods import PeriodGenerator
 
 
@@ -107,6 +108,19 @@ class PatternSequenceGenerator(PatternSequence):
             for x in range(xy_range[0][0], xy_range[0][1]):
                 print(self._pattern[:, y, x])
         print("-"*10, "End of printing", "-"*10, "\n")
+
+    def check_freq(self, xy=(0, 0), time_step=0.1):
+        """
+        Check the frequency of signal along z axis at pixel (x, y).
+
+        :param xy: tuple of int. The x-y position of the pixel being checked.
+        :param time_step: float. The time interval between two successive patterns.
+        """
+        spectrum = np.fft.fft(self._pattern[:, xy[1], xy[0]])
+        n = self._pattern.shape[0]
+        freq = np.fft.fftfreq(n, d=time_step)
+        plt.plot(freq, spectrum.real)
+        plt.show()
 
     def preview(self):
         """
@@ -217,14 +231,16 @@ if __name__ == "__main__":
     # prime_num = periods.prime_numbers()
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
-    patt = PatternSequenceGenerator(2000, 50, 50, 10)
+    fr = 20000
+    patt = PatternSequenceGenerator(fr, 5, 5, 1)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
 
     # Generate sinusoidal pattern sequence.
     start = time.time()
-    patt.generate_sinusoidal_patterns(time=2000, base_freq=0.1)
+    length = 2000
+    patt.generate_sinusoidal_patterns(time=length, base_freq=0.1)
     print("\nIt took {:.2f} s to generate pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
@@ -232,6 +248,9 @@ if __name__ == "__main__":
 
     # Preview pattern pixel values along time axis.
     # patt.print_through_time([(0, 2), (0, 2)])
+
+    # Check frequency of time series at position (x, y)
+    # patt.check_freq(xy=(4, 4), time_step=length/fr)
 
     # Pad patterns.
     # pad1 = ((200, 200), (200, 200))
@@ -259,7 +278,7 @@ if __name__ == "__main__":
     # patt.save_to_images(directory="./" + file_name, prefix=file_name)
 
     # Save pattern sequence to video
-    patt.save_to_video(fps=20, filename=file_name + '.avi')
+    # patt.save_to_video(fps=20, filename=file_name + '.avi')
 
 
 
