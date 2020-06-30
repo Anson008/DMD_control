@@ -3,6 +3,7 @@ import time
 import cv2
 import os
 import matplotlib.pyplot as plt
+import math
 from periods import PeriodGenerator
 
 
@@ -132,19 +133,30 @@ class PatternSequenceGenerator(PatternSequence):
                 break
         cv2.destroyAllWindows()
 
-    def pad(self, pad=((20, 20), (20, 20))):
+    def pad(self):
         """
-        Pad the edge of patterns.
+        Pad the edge of patterns so that the image is 1920 * 1080.
         """
+        W = 1920
+        H = 1080
+        bf_w = int(math.floor((W - self._width * self._scale) / 2))
+        bf_h = int(math.floor((H - self._height * self._scale) / 2))
+        af_w = int(W - self._width * self._scale - bf_w)
+        af_h = int(H - self._height * self._scale - bf_h)
         self._pattern = np.pad(self._pattern,
-                               ((0, 0), (pad[0][0], pad[0][1]),
-                                (pad[1][0], pad[1][1])), 'constant')
+                               ((0, 0), (bf_h, af_h), (bf_w, af_w)), 'constant')
 
-    def undo_pad(self, pad):
+    def undo_pad(self):
         """
         Undo pad.
         """
-        self._pattern = self._pattern[:, pad[0][0]:-pad[0][1], pad[1][0]:-pad[1][1]]
+        W = 1920
+        H = 1080
+        bf_w = int(math.floor((W - self._width * self._scale) / 2))
+        bf_h = int(math.floor((H - self._height * self._scale) / 2))
+        af_w = int(W - self._width * self._scale - bf_w)
+        af_h = int(H - self._height * self._scale - bf_h)
+        self._pattern = self._pattern[:, bf_h:-af_h, bf_w:-af_w]
 
     def make_calibration_pattern(self, pad):
         """
@@ -232,7 +244,7 @@ if __name__ == "__main__":
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
     fr = 10000  # Total number of frames
-    patt = PatternSequenceGenerator(fr, 2, 2, 100)
+    patt = PatternSequenceGenerator(fr, 4, 4, 50)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
@@ -253,11 +265,10 @@ if __name__ == "__main__":
     # patt.check_freq(xy=(4, 4), time_step=length/fr)
 
     # Pad patterns.
-    # pad1 = ((200, 200), (200, 200))
-    # patt.pad(pad1)
+    patt.pad()
 
     # Undo pad to patterns if necessary.
-    # patt.undo_pad(pad_width=pad)
+    # patt.undo_pad()
 
     # Preview pattern sequence frame by frame if necessary.
     # patt.preview()
@@ -273,12 +284,12 @@ if __name__ == "__main__":
     # calib_img = patt.make_calibration_pattern()
     # patt.save_single_pattern(calib_img, filename='calib_8by8')
 
-    file_name = 'sin_10kFrames_2X2_scale100_sr1000_bf10_pad0'
+    file_name = 'sin_10kFrames_4X4_scale50_sr1000_bf10_pad1'
     # Save pattern sequence to images
-    # patt.save_to_images(directory="./" + file_name, prefix=file_name)
+    patt.save_to_images(directory="./" + file_name, prefix=file_name)
 
     # Save pattern sequence to video
-    patt.save_to_video(fps=20, filename=file_name + '.avi')
+    # patt.save_to_video(fps=20, filename=file_name + '.avi')
 
 
 
