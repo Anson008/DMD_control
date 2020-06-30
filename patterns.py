@@ -79,7 +79,7 @@ class PatternSequenceGenerator(PatternSequence):
                     else:
                         self._pattern[z][y][x] = 0
 
-    def generate_sinusoidal_patterns(self, time=2000, base_freq=0.1):
+    def generate_sinusoidal_patterns(self, time=100, base_freq=0.1):
         """
         Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal wave.
         The frequency of the wave at each pixel is the multiple of a base frequency and the index of the pixel.
@@ -231,16 +231,16 @@ if __name__ == "__main__":
     # prime_num = periods.prime_numbers()
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
-    fr = 20000  # Total number of frames
-    patt = PatternSequenceGenerator(fr, 5, 5, 1)
+    fr = 10000  # Total number of frames
+    patt = PatternSequenceGenerator(fr, 2, 2, 100)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
 
     # Generate sinusoidal pattern sequence.
     start = time.time()
-    length = 2000
-    patt.generate_sinusoidal_patterns(time=length, base_freq=0.1)
+    sample_rate = 1000
+    patt.generate_sinusoidal_patterns(time=int(fr / sample_rate), base_freq=10)
     print("\nIt took {:.2f} s to generate pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
@@ -273,12 +273,12 @@ if __name__ == "__main__":
     # calib_img = patt.make_calibration_pattern()
     # patt.save_single_pattern(calib_img, filename='calib_8by8')
 
-    file_name = 'sin_2kFrames_50X50_scale10_pad0'
+    file_name = 'sin_10kFrames_2X2_scale100_sr1000_bf10_pad0'
     # Save pattern sequence to images
     # patt.save_to_images(directory="./" + file_name, prefix=file_name)
 
     # Save pattern sequence to video
-    # patt.save_to_video(fps=20, filename=file_name + '.avi')
+    patt.save_to_video(fps=20, filename=file_name + '.avi')
 
 
 
