@@ -231,7 +231,7 @@ if __name__ == "__main__":
     # prime_num = periods.prime_numbers()
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
-    fr = 20000
+    fr = 20000  # Total number of frames
     patt = PatternSequenceGenerator(fr, 5, 5, 1)
 
     # Get pattern shape.

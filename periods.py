@@ -13,3 +13,26 @@ class PeriodGenerator:
                      467, 479, 487, 491, 499, 503, 509, 521, 523, 541]
         return prime_num
 
+    @staticmethod
+    def prime_number_list(upper):
+        # Initialize a list
+        primes = []
+        for candidate in range(2, upper + 1):
+            # Assume number is prime until shown it is not.
+            is_prime = True
+            for num in range(2, int(candidate ** 0.5) + 1):
+                if candidate % num == 0:
+                    is_prime = False
+                    break
+            if is_prime:
+                primes.append(candidate)
+        return primes
+
+
+if __name__ == "__main__":
+    periods = PeriodGenerator()
+    prime_list = periods.prime_number_list(2000)
+    print(len(prime_list))
+    print(prime_list)
+
+
