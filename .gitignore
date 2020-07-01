@@ -6,4 +6,5 @@ test*.py
 **/videos
 **/img_sequence
 **/raw_data
-sin_**_pad0
+sin_**
+b_**

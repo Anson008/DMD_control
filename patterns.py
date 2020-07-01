@@ -75,7 +75,7 @@ class PatternSequenceGenerator(PatternSequence):
                 for x in range(self._width * self._scale):
                     # first define the mapping between the index of period value and position (y, x)
                     i_period = (x // self._scale) + self._width * (y // self._scale)
-                    if (z // periods) % 2 == 0:
+                    if (z // periods[i_period]) % 2 == 0:
                         self._pattern[z][y][x] = 255
                     else:
                         self._pattern[z][y][x] = 0
@@ -239,24 +239,31 @@ class PatternSequenceGenerator(PatternSequence):
 
 if __name__ == "__main__":
     # Load the leading 100 prime numbers
-    # periods = PeriodGenerator()
-    # prime_num = periods.prime_numbers()
+    periods = PeriodGenerator()
+    prime_num = periods.prime_numbers()
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
-    fr = 10000  # Total number of frames
-    patt = PatternSequenceGenerator(fr, 4, 4, 50)
+    patt = PatternSequenceGenerator(10000, 2, 2, 100)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
 
-    # Generate sinusoidal pattern sequence.
+    # Generate binary pattern sequence.
     start = time.time()
-    sample_rate = 1000
-    patt.generate_sinusoidal_patterns(time=int(fr / sample_rate), base_freq=10)
-    print("\nIt took {:.2f} s to generate pattern sequence of shape "
+    patt.generate_binary_patterns(periods=prime_num)
+    print("\nIt took {:.2f} s to generate binary pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
           .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
+
+    # Generate sinusoidal pattern sequence.
+    """start = time.time()
+    sample_rate = 1000
+    patt.generate_sinusoidal_patterns(time=int(frames / sample_rate), base_freq=10)
+    print("\nIt took {:.2f} s to generate pattern sequence of shape "
+          "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
+          "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
+          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
 
     # Preview pattern pixel values along time axis.
     # patt.print_through_time([(0, 2), (0, 2)])
@@ -284,7 +291,8 @@ if __name__ == "__main__":
     # calib_img = patt.make_calibration_pattern()
     # patt.save_single_pattern(calib_img, filename='calib_8by8')
 
-    file_name = 'sin_10kFrames_4X4_scale50_sr1000_bf10_pad1'
+    file_name = 'b_10kFrames_2X2_scale100_pad1'
+    # file_name = 'sin_10kFrames_2X2_scale100_sr1000_bf10_pad1'
     # Save pattern sequence to images
     patt.save_to_images(directory="./" + file_name, prefix=file_name)
 
