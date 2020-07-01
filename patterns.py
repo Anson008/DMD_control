@@ -189,20 +189,28 @@ class PatternSequenceGenerator(PatternSequence):
         file_path = os.path.join(directory, filename)
         cv2.imwrite(file_path, img)
 
-    def save_to_images(self, directory='./img_sequence', prefix='test', fmt='.png'):
+    def save_to_images(self, directory='./img_sequence', prefix='test', fmt='.png', bit_level=8):
         """
         Save pattern sequence as images to a user specified directory, with auto naming from "0" to "(No. of patterns) - 1".
 
         :param directory: str. Destination directory.
         :param prefix: str. The prefix of file names. Index will be appended automatically when generating full names.
         :param fmt: str. Format of the pattern files. Default is '.png'
+        :param bit_level: int. Specify the bit level of images to save. Default is 8.
+                        Choose from 8 (grayscale) or 1 (binary).
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
-        for z in range(self._frames):
-            filename = prefix + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
-            file_path = os.path.join(directory, filename)
-            cv2.imwrite(file_path, self._pattern[z, :, :])
+        if bit_level == 1:
+            for z in range(self._frames):
+                filename = prefix + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
+                file_path = os.path.join(directory, filename)
+                cv2.imwrite(file_path, self._pattern[z, :, :], [cv2.IMWRITE_PNG_BILEVEL, 1])
+        elif bit_level == 8:
+            for z in range(self._frames):
+                filename = prefix + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
+                file_path = os.path.join(directory, filename)
+                cv2.imwrite(file_path, self._pattern[z, :, :])
 
     def save_to_video(self, fps, directory='./videos', filename='video1.avi',
                       pattern_type="grayscale", threshold=127):
@@ -243,7 +251,7 @@ if __name__ == "__main__":
     prime_num = periods.prime_numbers()
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
-    patt = PatternSequenceGenerator(10000, 2, 2, 100)
+    patt = PatternSequenceGenerator(10, 2, 2, 100)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
@@ -291,10 +299,10 @@ if __name__ == "__main__":
     # calib_img = patt.make_calibration_pattern()
     # patt.save_single_pattern(calib_img, filename='calib_8by8')
 
-    file_name = 'b_10kFrames_2X2_scale100_pad1'
+    file_name = 'b_10Frames_2X2_scale100_pad1'
     # file_name = 'sin_10kFrames_2X2_scale100_sr1000_bf10_pad1'
     # Save pattern sequence to images
-    patt.save_to_images(directory="./" + file_name, prefix=file_name)
+    patt.save_to_images(directory="./" + file_name, prefix=file_name, bit_level=1)
 
     # Save pattern sequence to video
     # patt.save_to_video(fps=20, filename=file_name + '.avi')
