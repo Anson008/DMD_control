@@ -203,12 +203,12 @@ class PatternSequenceGenerator(PatternSequence):
             os.makedirs(directory)
         if bit_level == 1:
             for z in range(self._frames):
-                filename = prefix + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
+                filename = prefix + '_' + "{:d}".format(z) + fmt
                 file_path = os.path.join(directory, filename)
                 cv2.imwrite(file_path, self._pattern[z, :, :], [cv2.IMWRITE_PNG_BILEVEL, 1])
         elif bit_level == 8:
             for z in range(self._frames):
-                filename = prefix + '_' + "{:d}".format(z).zfill(len(str(z))) + fmt
+                filename = prefix + '_' + "{:d}".format(z) + fmt
                 file_path = os.path.join(directory, filename)
                 cv2.imwrite(file_path, self._pattern[z, :, :])
 
@@ -251,7 +251,7 @@ if __name__ == "__main__":
     prime_num = periods.prime_numbers()
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
-    patt = PatternSequenceGenerator(10, 2, 2, 100)
+    patt = PatternSequenceGenerator(20, 2, 2, 100)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
@@ -299,7 +299,7 @@ if __name__ == "__main__":
     # calib_img = patt.make_calibration_pattern()
     # patt.save_single_pattern(calib_img, filename='calib_8by8')
 
-    file_name = 'b_10Frames_2X2_scale100_pad1'
+    file_name = 'b_20Frames_2X2_scale100_pad1'
     # file_name = 'sin_10kFrames_2X2_scale100_sr1000_bf10_pad1'
     # Save pattern sequence to images
     patt.save_to_images(directory="./" + file_name, prefix=file_name, bit_level=1)
