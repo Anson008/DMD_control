@@ -80,22 +80,25 @@ class PatternSequenceGenerator(PatternSequence):
                     else:
                         self._pattern[z][y][x] = 0
 
-    def generate_sinusoidal_patterns(self, time=100, base_freq=0.1):
+    def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1):
         """
         Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal wave.
         The frequency of the wave at each pixel is the multiple of a base frequency and the index of the pixel.
         For example, a 2*2 pattern has 4 pixels in total. The frequency of the first pixel (1, 1) is 1*base_freq.
         The frequency of the last pixel (2, 2) is 4*base_freq.
 
-        :param time: int. Total length of the signal (pseudo time).
         :param base_freq: float. Base frequency of the signal, i.e., the frequency of the pixel at upper-left corner.
+        :param freq_step: float. The increment by which frequency is increased.
         """
+        max_freq = self._height * self._width * base_freq
+        sample_rate = 20 * max_freq
         self._pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
         for y in range(self._height * self._scale):
             for x in range(self._width * self._scale):
-                freq = ((x // self._scale) + self._width * (y // self._scale) + 1) * base_freq
+                freq = base_freq + ((x // self._scale) + self._width * (y // self._scale)) * freq_step
                 self._pattern[:, y, x] = 128 * np.sin(2 * np.pi * freq *
-                                                      np.linspace(0, time, num=self._frames, endpoint=True)) + 127
+                                                      np.linspace(0, (self._frames / sample_rate),
+                                                                  num=self._frames, endpoint=True)) + 127
 
     def look_along_time_axis(self, xy_range):
         """
@@ -251,36 +254,37 @@ if __name__ == "__main__":
     prime_num = periods.prime_numbers()
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
-    patt = PatternSequenceGenerator(20, 2, 2, 100)
+    patt = PatternSequenceGenerator(2000, 2, 2, 1)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
 
     # Generate binary pattern sequence.
-    start = time.time()
+    """start = time.time()
     patt.generate_binary_patterns(periods=prime_num)
     print("\nIt took {:.2f} s to generate binary pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
-          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
+          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
 
     # Generate sinusoidal pattern sequence.
-    """start = time.time()
-    sample_rate = 1000
-    patt.generate_sinusoidal_patterns(time=int(frames / sample_rate), base_freq=10)
+    start = time.time()
+    patt.generate_sinusoidal_patterns(base_freq=0.1)
     print("\nIt took {:.2f} s to generate pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
-          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
+          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
 
     # Preview pattern pixel values along time axis.
     # patt.print_through_time([(0, 2), (0, 2)])
 
     # Check frequency of time series at position (x, y)
-    # patt.check_freq(xy=(4, 4), time_step=length/fr)
+    for i in range(height):
+        for j in range(width):
+            patt.check_freq(xy=(j, i), time_step=0.1)
 
     # Pad patterns.
-    patt.pad()
+    # patt.pad()
 
     # Undo pad to patterns if necessary.
     # patt.undo_pad()
@@ -299,10 +303,10 @@ if __name__ == "__main__":
     # calib_img = patt.make_calibration_pattern()
     # patt.save_single_pattern(calib_img, filename='calib_8by8')
 
-    file_name = 'b_20Frames_2X2_scale100_pad1'
+    # file_name = 'b_20Frames_2X2_scale100_pad1'
     # file_name = 'sin_10kFrames_2X2_scale100_sr1000_bf10_pad1'
     # Save pattern sequence to images
-    patt.save_to_images(directory="./" + file_name, prefix=file_name, bit_level=1)
+    # patt.save_to_images(directory="./" + file_name, prefix=file_name, bit_level=1)
 
     # Save pattern sequence to video
     # patt.save_to_video(fps=20, filename=file_name + '.avi')
