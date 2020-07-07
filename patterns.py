@@ -126,6 +126,14 @@ class PatternSequenceGenerator(PatternSequence):
         plt.plot(freq, spectrum.real)
         plt.show()
 
+    def get_time_series(self, x, y):
+        """
+        Get the time series along z axis at position (y, x).
+        :param x: int. Index of pixel along x axis (width).
+        :param y: int. Index of pixel along y axis (height).
+        """
+        return self._pattern[:, y, x]
+
     def preview(self):
         """
         Preview every pattern in the pattern sequence. Enter 'q' to exit the preview.
@@ -277,11 +285,16 @@ if __name__ == "__main__":
 
     # Preview pattern pixel values along time axis.
     # patt.print_through_time([(0, 2), (0, 2)])
-
+    
+    # Get time series along z axis at position (y, x)
+    # ts00 = patt.get_time_series(x=1, y=1)
+    # plt.plot(ts00)
+    # plt.show()
+    
     # Check frequency of time series at position (x, y)
-    for i in range(height):
+    """for i in range(height):
         for j in range(width):
-            patt.check_freq(xy=(j, i), time_step=0.1)
+            patt.check_freq(xy=(j, i), time_step=0.1)"""
 
     # Pad patterns.
     # patt.pad()
@@ -304,9 +317,9 @@ if __name__ == "__main__":
     # patt.save_single_pattern(calib_img, filename='calib_8by8')
 
     # file_name = 'b_20Frames_2X2_scale100_pad1'
-    # file_name = 'sin_10kFrames_2X2_scale100_sr1000_bf10_pad1'
+    file_name = 'sin_2kFrames_2X2_scale1_baseFreq1E-1_pad0'
     # Save pattern sequence to images
-    # patt.save_to_images(directory="./" + file_name, prefix=file_name, bit_level=1)
+    patt.save_to_images(directory="./" + file_name, prefix=file_name, bit_level=8)
 
     # Save pattern sequence to video
     # patt.save_to_video(fps=20, filename=file_name + '.avi')
