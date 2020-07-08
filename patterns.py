@@ -60,25 +60,38 @@ class PatternSequence:
 
 
 class PatternSequenceGenerator(PatternSequence):
-    def generate_binary_patterns(self, periods):
+    def generate_binary_patterns(self, periods, mode='uniform'):
         """
         Generate binary pattern sequence. Along the time axis, the pixel values forms a square wave (binary signal).
-        The period of the wave at each pixel is the ith prime number, where i is the index of the pixel. For example,
-        a 2*2 pattern has 4 pixels in total. The period of the first pixel (1, 1) is the first prime number 2. The period
-        of the last pixel (2, 2) is 7 which is the 4th prime number.
 
-        :param periods: list of int. The periods of signal at position (x, y)
+        If in 'nonuniform' mode, the period of the wave at each pixel is the ith prime number, where i is the index
+        of the pixel. For example, a 2*2 pattern has 4 pixels in total. The period of the first pixel (1, 1) is the
+        first prime number 2. The period of the last pixel (2, 2) is 7 which is the 4th prime number.
+
+        If in 'uniform' mode, the period of the wave over all pixels is the same.
+
+        :param periods: list of int. The periods of signal at position (x, y).
+        :param mode: string. Specify on which mode the generator works. Options are 'uniform' and 'nonuniform'.
         """
         self._pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
-        for z in range(self._frames):
-            for y in range(self._height * self._scale):
-                for x in range(self._width * self._scale):
-                    # first define the mapping between the index of period value and position (y, x)
-                    i_period = (x // self._scale) + self._width * (y // self._scale)
-                    if (z // periods[i_period]) % 2 == 0:
-                        self._pattern[z][y][x] = 255
-                    else:
-                        self._pattern[z][y][x] = 0
+        if mode == 'nonuniform':
+            for z in range(self._frames):
+                for y in range(self._height * self._scale):
+                    for x in range(self._width * self._scale):
+                        # first define the mapping between the index of period value and position (y, x)
+                        i_period = (x // self._scale) + self._width * (y // self._scale)
+                        if (z // periods[i_period]) % 2 == 0:
+                            self._pattern[z][y][x] = 255
+                        else:
+                            self._pattern[z][y][x] = 0
+        elif mode == 'uniform':
+            for z in range(self._frames):
+                if (z // periods[0]) % 2 == 0:
+                    self._pattern[z, :, :] = 255
+                else:
+                    self._pattern[z, :, :] = 0
+        else:
+            raise ValueError('Mode must be "nonuniform" or "uniform"')
 
     def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1):
         """
