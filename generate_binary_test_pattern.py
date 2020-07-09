@@ -1,4 +1,4 @@
-from patterns import PatternSequenceGenerator
+from PatternSequenceGenerator import PatternSequenceGenerator
 import matplotlib.pyplot as plt
 
 periods = [1000]

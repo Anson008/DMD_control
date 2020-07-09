@@ -4,7 +4,7 @@ import cv2
 import os
 import matplotlib.pyplot as plt
 import math
-from periods import PeriodGenerator
+from PeriodGenerator import PeriodGenerator
 
 
 class PatternSequence:

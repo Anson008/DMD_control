@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from periods import PeriodGenerator
+from PeriodGenerator import PeriodGenerator
 import math
 
 

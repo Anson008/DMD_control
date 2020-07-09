@@ -2,7 +2,7 @@ import pyvisa
 import sys
 import time
 import numpy as np
-from dso6032 import DSO6034A
+from DSO6034A import DSO6034A
 
 visa_rm = pyvisa.ResourceManager("C:\\Windows\\System32\\visa32.dll")
 vr = visa_rm.list_resources()
