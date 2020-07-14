@@ -242,14 +242,16 @@ class PatternSequenceGenerator(PatternSequence):
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
+        total = self._pattern.shape[0]
+        length = len(str(total))
         if bit_level == 1:
-            for z in range(self._pattern.shape[0]):
-                filename = prefix + '_' + "{:d}".format(z) + fmt
+            for z in range(total):
+                filename = prefix + '_' + "{:d}".format(z).zfill(length) + fmt
                 file_path = os.path.join(directory, filename)
                 cv2.imwrite(file_path, self._pattern[z, :, :], [cv2.IMWRITE_PNG_BILEVEL, 1])
         elif bit_level == 8:
-            for z in range(self._pattern.shape[0]):
-                filename = prefix + '_' + "{:d}".format(z) + fmt
+            for z in range(total):
+                filename = prefix + '_' + "{:d}".format(z).zfill(length) + fmt
                 file_path = os.path.join(directory, filename)
                 cv2.imwrite(file_path, self._pattern[z, :, :])
 

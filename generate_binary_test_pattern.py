@@ -1,7 +1,7 @@
 from PatternSequenceGenerator import PatternSequenceGenerator
 import matplotlib.pyplot as plt
 
-periods = [1000]
+periods = [500]
 patt = PatternSequenceGenerator(10000, 2, 2, 100)
 patt.generate_binary_patterns(periods)
 patt.pad()
@@ -11,5 +11,5 @@ patt.pad()
 plt.plot(ts00)
 plt.show()"""
 
-file_name = 'testB_10kFrames_2X2_scale100_T1000_pad1'
+file_name = 'testB_10kFrames_2X2_scale100_T500_pad1'
 patt.save_to_images(directory="./" + file_name, prefix=file_name, bit_level=1)
