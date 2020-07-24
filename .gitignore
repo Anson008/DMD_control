@@ -1,6 +1,7 @@
 test*.py
 *.avi
 *.png
+*.csv
 
 **/.idea
 **/videos

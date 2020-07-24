@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class PeriodGenerator:
     @staticmethod
     def prime_numbers():
@@ -28,9 +31,15 @@ class PeriodGenerator:
                 primes.append(candidate)
         return primes
 
+    @staticmethod
+    def save_to_csv(prime_list, path):
+        np.savetxt(path, prime_list, fmt='%d', delimiter=',')
+
 
 if __name__ == "__main__":
     periods = PeriodGenerator()
-    prime_list = periods.prime_number_list(542)
+    prime_list = periods.prime_number_list(3000)
     print(len(prime_list))
     print(prime_list)
+
+    periods.save_to_csv(prime_list, 'prime_numbers_lt_3000.csv')
