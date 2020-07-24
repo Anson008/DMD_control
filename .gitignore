@@ -8,3 +8,6 @@ test*.py
 **/raw_data
 sin_**
 b_**
+*.7z
+*.zip
+binary_**

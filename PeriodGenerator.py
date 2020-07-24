@@ -31,8 +31,6 @@ class PeriodGenerator:
 
 if __name__ == "__main__":
     periods = PeriodGenerator()
-    prime_list = periods.prime_number_list(2000)
+    prime_list = periods.prime_number_list(542)
     print(len(prime_list))
     print(prime_list)
-
-
