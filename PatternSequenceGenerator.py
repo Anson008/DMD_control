@@ -20,15 +20,11 @@ class PatternSequence:
         :param scale: int. The factor by which a single pixel is enlarged. For example, enlarge a native 4*4 pattern by
                     scale 10 will produce a pattern of actual size 40*40, i.e, each pixel is enlarged by 10 times but
                     the native structure of the pattern is still represented by a 4*4 grid.
-
-        Attributes
-        :_pattern: numpy array. Store the pixel values of pattern.
         """
         self._frames = frames
         self._width = width
         self._height = height
         self._scale = scale
-        self._pattern = None
 
     def get_shape(self):
         """
@@ -38,25 +34,19 @@ class PatternSequence:
         """
         return self._frames, self._height, self._width, self._scale
 
-    def get_pattern(self):
-        """
-        Return the pattern sequence.
-
-        :return: numpy array. The pattern sequence.
-        """
-        return self._pattern
-
-    def save_to_npy(self, directory='./raw_data', filename='test'):
+    @staticmethod
+    def save_to_npy(arr, directory='./raw_data', filename='test'):
         """
         Save the numpy array of pattern sequence to .npy file.
 
         :param directory: str. The directory to save file.
         :param filename: str. The file name.
+        :param arr: numpy array. Pattern sequence to save
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
         file_path = directory + '/' + filename + '.npy'
-        np.save(file_path, self._pattern)
+        np.save(file_path, arr)
 
 
 class PatternSequenceGenerator(PatternSequence):
@@ -72,8 +62,9 @@ class PatternSequenceGenerator(PatternSequence):
 
         :param periods: list of int. The periods of signal at position (x, y).
         :param mode: string. Specify on which mode the generator works. Options are 'uniform' and 'nonuniform'.
+        :return: numpy array. Pattern sequence generated.
         """
-        self._pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
+        pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
         if mode == 'nonuniform':
             for z in range(self._frames):
                 for y in range(self._height * self._scale):
@@ -81,17 +72,48 @@ class PatternSequenceGenerator(PatternSequence):
                         # first define the mapping between the index of period value and position (y, x)
                         i_period = (x // self._scale) + self._width * (y // self._scale)
                         if (z // periods[i_period]) % 2 == 0:
-                            self._pattern[z][y][x] = 255
+                            pattern[z][y][x] = 255
                         else:
-                            self._pattern[z][y][x] = 0
+                            pattern[z][y][x] = 0
         elif mode == 'uniform':
             for z in range(self._frames):
                 if (z // periods[0]) % 2 == 0:
-                    self._pattern[z, :, :] = 255
+                    pattern[z, :, :] = 255
                 else:
-                    self._pattern[z, :, :] = 0
+                    pattern[z, :, :] = 0
         else:
             raise ValueError('Mode must be "nonuniform" or "uniform"')
+        return pattern
+
+    def generate_binary_patterns_batch(self, periods, batch_size=1000):
+        """
+        Generate binary pattern sequence. Along the time axis, the pixel values forms a square wave (binary signal).
+
+        The period of the wave at each pixel is the ith prime number, where i is the index of the pixel.
+        For example, a 2*2 pattern has 4 pixels in total. The period of the first pixel (1, 1) is the
+        first prime number 2. The period of the last pixel (2, 2) is 7 which is the 4th prime number.
+
+        :param periods: list of int. The periods of signal at position (x, y).
+        :param batch_size: int. Number of batches to break up the sequence.
+        """
+        pattern = np.zeros((batch_size, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
+        num_batch, reminder = divmod(self._frames, batch_size)
+        batches = [x * batch_size for x in range(num_batch + 1)] + [reminder]
+        for i, batch in enumerate(batches):
+            if i + 1 < len(batches):
+                for z in range(batches[i], batches[i + 1]):
+                    for y in range(self._height * self._scale):
+                        for x in range(self._width * self._scale):
+                            # first define the mapping between the index of period value and position (y, x)
+                            i_period = (x // self._scale) + self._width * (y // self._scale)
+                            if (z // periods[i_period]) % 2 == 0:
+                                pattern[z][y][x] = 255
+                            else:
+                                pattern[z][y][x] = 0
+
+            else:
+                for k in range(reminder):
+                    z = num_batch * batch_size + k
 
     def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1):
         """
@@ -105,28 +127,31 @@ class PatternSequenceGenerator(PatternSequence):
         """
         max_freq = self._height * self._width * base_freq
         sample_rate = 20 * max_freq
-        self._pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
+        pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
         for y in range(self._height * self._scale):
             for x in range(self._width * self._scale):
                 freq = base_freq + ((x // self._scale) + self._width * (y // self._scale)) * freq_step
-                self._pattern[:, y, x] = 128 * np.sin(2 * np.pi * freq *
-                                                      np.linspace(0, (self._frames / sample_rate),
-                                                                  num=self._frames, endpoint=True)) + 127
+                pattern[:, y, x] = 128 * np.sin(2 * np.pi * freq *
+                                                np.linspace(0, (self._frames / sample_rate),
+                                                            num=self._frames, endpoint=True)) + 127
+        return pattern
 
-    def gray2binary(self):
+    @staticmethod
+    def gray2binary(pattern):
         """
         Convert elements along the first axis of a uint8 pattern array into a binary-valued output array.
         """
-        self._pattern = np.unpackbits(self._pattern, axis=0)
+        return np.unpackbits(pattern, axis=0)
 
-    def binary2gray(self):
+    @staticmethod
+    def binary2gray(pattern):
         """
         Convert elements along the first axis of a binary-valued pattern array into a uint8 output array.
-        :param arr: numpy array. The array to be converted.
         """
-        self._pattern = np.packbits(self._pattern, axis=0)
+        return np.packbits(pattern, axis=0)
 
-    def look_along_time_axis(self, xy_range):
+    @staticmethod
+    def look_along_time_axis(pattern, xy_range):
         """
         Print out a selected x-y region of pattern sequence along time axis.
 
@@ -136,42 +161,44 @@ class PatternSequenceGenerator(PatternSequence):
         print("-"*10, "Preview of signal along z axis", "-"*10)
         for y in range(xy_range[1][0], xy_range[1][1]):
             for x in range(xy_range[0][0], xy_range[0][1]):
-                print(self._pattern[:, y, x])
+                print(pattern[:, y, x])
         print("-"*10, "End of printing", "-"*10, "\n")
 
-    def check_freq(self, xy=(0, 0), time_step=0.1):
+    @staticmethod
+    def check_freq(pattern, xy=(0, 0), time_step=0.1):
         """
         Check the frequency of signal along z axis at pixel (x, y).
 
         :param xy: tuple of int. The x-y position of the pixel being checked.
         :param time_step: float. The time interval between two successive patterns.
         """
-        spectrum = np.fft.fft(self._pattern[:, xy[1], xy[0]])
-        n = self._pattern.shape[0]
+        spectrum = np.fft.fft(pattern[:, xy[1], xy[0]])
+        n = pattern.shape[0]
         freq = np.fft.fftfreq(n, d=time_step)
         plt.plot(freq, spectrum.real)
         plt.show()
 
-    def get_time_series(self, x, y):
+    @staticmethod
+    def get_time_series(pattern, x, y):
         """
         Get the time series along z axis at position (y, x).
 
         :param x: int. Index of pixel along x axis (width).
         :param y: int. Index of pixel along y axis (height).
         """
-        return self._pattern[:, y, x]
+        return pattern[:, y, x]
 
-    def preview(self):
+    def preview(self, pattern):
         """
         Preview every pattern in the pattern sequence. Enter 'q' to exit the preview.
         """
         for z in range(self._frames):
-            cv2.imshow('Preview of patterns', self._pattern[z, :, :])
+            cv2.imshow('Preview of patterns', pattern[z, :, :])
             if cv2.waitKey(0) == ord('q'):
                 break
         cv2.destroyAllWindows()
 
-    def pad(self):
+    def pad(self, pattern):
         """
         Pad the edge of patterns so that the image is 1920 * 1080.
         """
@@ -181,21 +208,20 @@ class PatternSequenceGenerator(PatternSequence):
         bf_h = int(math.floor((H - self._height * self._scale) / 2))
         af_w = int(W - self._width * self._scale - bf_w)
         af_h = int(H - self._height * self._scale - bf_h)
-        self._pattern = np.pad(self._pattern, ((0, 0), (bf_h, af_h), (bf_w, af_w)), 'constant')
+        return np.pad(pattern, ((0, 0), (bf_h, af_h), (bf_w, af_w)), 'constant')
 
-    def undo_pad(self):
+    def undo_pad(self, pattern):
         """
         Undo pad.
-        :param arr: numpy array. Array of which the pad to be removed.
         """
-        if self._pattern.shape[1] == 1080 and self._pattern.shape[2] == 1920:
+        if pattern.shape[1] == 1080 and pattern.shape[2] == 1920:
             W = 1920
             H = 1080
             bf_w = int(math.floor((W - self._width * self._scale) / 2))
             bf_h = int(math.floor((H - self._height * self._scale) / 2))
             af_w = int(W - self._width * self._scale - bf_w)
             af_h = int(H - self._height * self._scale - bf_h)
-            self._pattern = self._pattern[:, bf_h:-af_h, bf_w:-af_w]
+            return pattern[:, bf_h:-af_h, bf_w:-af_w]
         else:
             print("Dimension of input array is not 1920 by 1080.")
 
@@ -230,7 +256,8 @@ class PatternSequenceGenerator(PatternSequence):
         file_path = os.path.join(directory, filename)
         cv2.imwrite(file_path, img)
 
-    def save_to_images(self, directory='./img_sequence', prefix='test', fmt='.png', bit_level=8):
+    @staticmethod
+    def save_to_images(pattern, directory='./img_sequence', prefix='test', fmt='.png', bit_level=8):
         """
         Save pattern sequence as images to a user specified directory, with auto naming from "0" to "(No. of patterns) - 1".
 
@@ -242,20 +269,21 @@ class PatternSequenceGenerator(PatternSequence):
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
-        total = self._pattern.shape[0]
+        total = pattern.shape[0]
         length = len(str(total))
         if bit_level == 1:
             for z in range(total):
                 filename = prefix + '_' + "{:d}".format(z).zfill(length) + fmt
                 file_path = os.path.join(directory, filename)
-                cv2.imwrite(file_path, self._pattern[z, :, :], [cv2.IMWRITE_PNG_BILEVEL, 1])
+                cv2.imwrite(file_path, pattern[z, :, :], [cv2.IMWRITE_PNG_BILEVEL, 1])
         elif bit_level == 8:
             for z in range(total):
                 filename = prefix + '_' + "{:d}".format(z).zfill(length) + fmt
                 file_path = os.path.join(directory, filename)
-                cv2.imwrite(file_path, self._pattern[z, :, :])
+                cv2.imwrite(file_path, pattern[z, :, :])
 
-    def save_to_video(self, fps, directory='./videos', filename='video1.avi',
+    @staticmethod
+    def save_to_video(pattern, fps, directory='./videos', filename='video1.avi',
                       pattern_type="grayscale", threshold=127):
         """
         Save pattern sequence as a video to user specified directory.
@@ -270,19 +298,19 @@ class PatternSequenceGenerator(PatternSequence):
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
-        fs, w, h = self._pattern.shape
+        fs, w, h = pattern.shape
         file_path = os.path.join(directory, filename)
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
         if pattern_type == "binary":
             for z in range(fs):
                 # Convert gray scale to binary.
-                thresh, frame_b = cv2.threshold(self._pattern[z, :, :], threshold, 255, cv2.THRESH_BINARY)
+                thresh, frame_b = cv2.threshold(pattern[z, :, :], threshold, 255, cv2.THRESH_BINARY)
                 video.write(frame_b)
             video.release()
         elif pattern_type == "grayscale":
             for z in range(fs):
-                video.write(self._pattern[z, :, :])
+                video.write(pattern[z, :, :])
             video.release()
         else:
             print("Not a valid type! Enter exactly 'binary' or 'grayscale'.")
@@ -290,30 +318,30 @@ class PatternSequenceGenerator(PatternSequence):
 
 if __name__ == "__main__":
     # Load the leading 100 prime numbers
-    # periods = PeriodGenerator()
-    # prime_num = periods.prime_numbers()
+    periods = PeriodGenerator()
+    prime_num = periods.prime_numbers()
 
     # Set pattern pad, create an instant of PatternSequenceGenerator class.
-    patt = PatternSequenceGenerator(20, 2, 2, 100)
+    patt = PatternSequenceGenerator(200, 2, 2, 100)
 
     # Get pattern shape.
     frames, height, width, scale = patt.get_shape()
 
     # Generate binary pattern sequence.
-    """start = time.time()
-    patt.generate_binary_patterns(periods=prime_num)
+    start = time.time()
+    pattern_arr = patt.generate_binary_patterns(periods=prime_num, mode='nonuniform')
     print("\nIt took {:.2f} s to generate binary pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
-          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
+          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
 
     # Generate sinusoidal pattern sequence.
-    start = time.time()
-    patt.generate_sinusoidal_patterns(base_freq=0.1)
+    """start = time.time()
+    pattern_arr = patt.generate_sinusoidal_patterns(base_freq=0.1)
     print("\nIt took {:.2f} s to generate pattern sequence of shape "
           "({:d}, {:d}, {:d}). \nThe actual height and width are scaled by a factor of {:d}."
           "\nThe shape of actual patterns should be ({:d}, {:d}, {:d}), without taking account into pad."
-          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))
+          .format(time.time() - start, frames, height, width, scale, frames, height * scale, width * scale))"""
     
     # Get time series along z axis at position (y, x)
     """ts00 = patt.get_time_series(arr=patterns, x=0, y=0)
@@ -326,11 +354,11 @@ if __name__ == "__main__":
             patt.check_freq(xy=(j, i), time_step=0.1)"""
 
     # Convert uint8 elements to binary-valued elements
-    patt.gray2binary()
-    print(f"Shape after converting to binary:", patt.get_shape())
+    #patt.gray2binary()
+    #print(f"Shape after converting to binary:", patt.get_shape())
 
     # Pad patterns.
-    patt.pad()
+    patt.pad(pattern_arr)
 
     # Undo pad to patterns.
     # patt.undo_pad()
@@ -349,10 +377,10 @@ if __name__ == "__main__":
     # calib_img = patt.make_calibration_pattern()
     # patt.save_single_pattern(calib_img, filename='calib_8by8')
 
-    # file_name = 'b_20Frames_2X2_scale100_pad1'
-    file_name = 'sinB_20Frames_2X2_scale100_baseFreq1E-1_pad1'
+    file_name = 'b_20Frames_2X2_scale100_pad1'
+    # file_name = 'sinB_20Frames_2X2_scale100_baseFreq1E-1_pad1'
     # Save pattern sequence to images
-    patt.save_to_images(directory="./" + file_name, prefix=file_name, bit_level=1)
+    patt.save_to_images(pattern_arr, directory="./" + file_name, prefix=file_name, bit_level=1)
 
     # Save pattern sequence to video
     # patt.save_to_video(fps=20, filename=file_name + '.avi')
