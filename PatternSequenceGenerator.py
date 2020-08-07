@@ -85,36 +85,6 @@ class PatternSequenceGenerator(PatternSequence):
             raise ValueError('Mode must be "nonuniform" or "uniform"')
         return pattern
 
-    def generate_binary_patterns_batch(self, periods, batch_size=1000):
-        """
-        Generate binary pattern sequence. Along the time axis, the pixel values forms a square wave (binary signal).
-
-        The period of the wave at each pixel is the ith prime number, where i is the index of the pixel.
-        For example, a 2*2 pattern has 4 pixels in total. The period of the first pixel (1, 1) is the
-        first prime number 2. The period of the last pixel (2, 2) is 7 which is the 4th prime number.
-
-        :param periods: list of int. The periods of signal at position (x, y).
-        :param batch_size: int. Number of batches to break up the sequence.
-        """
-        pattern = np.zeros((batch_size, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
-        num_batch, reminder = divmod(self._frames, batch_size)
-        batches = [x * batch_size for x in range(num_batch + 1)] + [reminder]
-        for i, batch in enumerate(batches):
-            if i + 1 < len(batches):
-                for z in range(batches[i], batches[i + 1]):
-                    for y in range(self._height * self._scale):
-                        for x in range(self._width * self._scale):
-                            # first define the mapping between the index of period value and position (y, x)
-                            i_period = (x // self._scale) + self._width * (y // self._scale)
-                            if (z // periods[i_period]) % 2 == 0:
-                                pattern[z][y][x] = 255
-                            else:
-                                pattern[z][y][x] = 0
-
-            else:
-                for k in range(reminder):
-                    z = num_batch * batch_size + k
-
     def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1):
         """
         Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal wave.
