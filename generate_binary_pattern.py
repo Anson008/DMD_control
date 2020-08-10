@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 import time
 
 # Generate a list of prime numbers
-upper = 542  # Upper limit to search for prime numbers
-periods = PeriodGenerator.prime_number_list(upper)
-# periods = [3]
+# upper = 542  # Upper limit to search for prime numbers
+# periods = PeriodGenerator.prime_number_list(upper)
+periods = [2]
 
 start = time.time()
-patt = PatternSequenceGenerator(54100, 10, 10, 20)
-patt.generate_binary_patterns(periods, mode='nonuniform')
-#patt.pad()
+patt = PatternSequenceGenerator(10000, 1, 1, 200)
+pattern = patt.generate_binary_patterns(periods, mode='nonuniform')
+pattern_padded = patt.pad(pattern)
 end = time.time()
 print(f"It takes {end - start:.2f}s to generate patterns.")
 
@@ -20,9 +20,9 @@ print(f"It takes {end - start:.2f}s to generate patterns.")
 plt.plot(ts00, 'r.-')
 plt.show()"""
 
-file_name = 'binary_54100Frames_10X10_scale20_pad0'
+file_name = 'binary_10kFrames_1X1_scale200_T2_pad1'
 
 start = time.time()
-patt.save_to_images(directory="E:/Data_exp/Freq_Encoded_Data/patterns/" + file_name, prefix=file_name, bit_level=1)
+patt.save_to_images(pattern_padded, directory="E:/Data_exp/Freq_Encoded_Data/patterns/" + file_name, prefix=file_name, bit_level=1)
 end = time.time()
 print(f"It takes {end - start:.2f}s to save patterns to files.")
