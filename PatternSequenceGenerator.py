@@ -178,7 +178,10 @@ class PatternSequenceGenerator(PatternSequence):
         bf_h = int(math.floor((H - self._height * self._scale) / 2))
         af_w = int(W - self._width * self._scale - bf_w)
         af_h = int(H - self._height * self._scale - bf_h)
-        return np.pad(pattern, ((0, 0), (bf_h, af_h), (bf_w, af_w)), 'constant')
+        if pattern.ndim == 3:
+            return np.pad(pattern, ((0, 0), (bf_h, af_h), (bf_w, af_w)), 'constant')
+        if pattern.ndim == 2:
+            return np.pad(pattern, ((bf_h, af_h), (bf_w, af_w)), 'constant')
 
     def undo_pad(self, pattern):
         """
@@ -195,21 +198,17 @@ class PatternSequenceGenerator(PatternSequence):
         else:
             print("Dimension of input array is not 1920 by 1080.")
 
-    def make_calibration_pattern(self, pad):
+    def make_calibration_pattern(self):
         """
-        Generate a pattern of "丰" in case a known pattern is needed to test the program or do simulations.
+        Generate a pattern of "+" in case a known pattern is needed to test the program or do simulations.
         """
         w, h = self._width * self._scale, self._height * self._scale
         img = np.zeros((h, w))
         for i in range(h):
             for j in range(w):
-                c1i = (int(0.1*h) <= i <= int(0.3*h) or
-                       int(0.4*h) <= i <= int(0.6*h) or
-                       int(0.7*h) <= i <= int(0.9*h))
+                c1i = (int(0.4*h) <= i <= int(0.6*h))
                 c1j = (int(0.4*w) <= j <= int(0.6*w))
                 img[i, j] = 255 if c1i or c1j else 0
-        img = np.pad(img, ((pad[0][0], pad[0][1]), (pad[1][0], pad[1][1])),
-                     'constant', constant_values=((0, 0),))
         return img
 
     @staticmethod
@@ -224,7 +223,7 @@ class PatternSequenceGenerator(PatternSequence):
         if not os.path.exists(directory):
             os.makedirs(directory)
         file_path = os.path.join(directory, filename)
-        cv2.imwrite(file_path, img)
+        cv2.imwrite(file_path, img, [cv2.IMWRITE_PNG_BILEVEL, 1])
 
     @staticmethod
     def save_to_images(pattern, directory='./img_sequence', prefix='test', fmt='.png', bit_level=8):
