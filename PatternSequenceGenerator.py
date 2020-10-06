@@ -168,16 +168,26 @@ class PatternSequenceGenerator(PatternSequence):
                 break
         cv2.destroyAllWindows()
 
-    def pad(self, pattern):
+    def pad(self, pattern, width=1920, height=1080):
         """
         Pad the edge of patterns so that the image is 1920 * 1080.
+        :param width: int, width of the pattern after padded.
+        :param height: int, height of the pattern after padded.
         """
-        W = 1920
-        H = 1080
-        bf_w = int(math.floor((W - self._width * self._scale) / 2))
-        bf_h = int(math.floor((H - self._height * self._scale) / 2))
-        af_w = int(W - self._width * self._scale - bf_w)
-        af_h = int(H - self._height * self._scale - bf_h)
+        img_w = self._width * self._scale
+        img_h = self._height * self._scale
+        if width <= img_w:
+            bf_w = 0
+            af_w = 0
+        else:
+            bf_w = int(math.floor((width - img_w) / 2))
+            af_w = int(width - img_w - bf_w)
+        if height <= img_h:
+            bf_h = 0
+            af_h = 0
+        else:
+            bf_h = int(math.floor((height - img_h) / 2))
+            af_h = int(height - img_h - bf_h)
         if pattern.ndim == 3:
             return np.pad(pattern, ((0, 0), (bf_h, af_h), (bf_w, af_w)), 'constant')
         if pattern.ndim == 2:
