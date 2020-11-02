@@ -75,20 +75,19 @@ class PatternSequenceGenerator(PatternSequence):
                         else:
                             pattern[z][y][x] = 0
             # Computes the Kronecker product, a composite array made of blocks of the second array scaled by the first.
-            pattern = np.kron(pattern, np.ones((self._scale, self._scale)))
-
+            pattern = np.kron(pattern, np.ones((self._scale, self._scale), dtype=np.uint8))
         elif mode == 'uniform':
             for z in range(self._frames):
                 if (z // periods[0]) % 2 == 0:
                     pattern[z, :, :] = 255
                 else:
                     pattern[z, :, :] = 0
-            pattern = np.kron(pattern, np.ones((self._scale, self._scale)))
+            pattern = np.kron(pattern, np.ones((self._scale, self._scale), dtype=np.uint8))
         else:
             raise ValueError('Mode must be "nonuniform" or "uniform"')
         return pattern
 
-    def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1):
+    def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1, mode='uniform'):
         """
         Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal wave.
         The frequency of the wave at each pixel is the multiple of a base frequency and the index of the pixel.
@@ -97,17 +96,28 @@ class PatternSequenceGenerator(PatternSequence):
 
         :param base_freq: float. Base frequency of the signal, i.e., the frequency of the pixel at upper-left corner.
         :param freq_step: float. The increment by which frequency is increased.
+        :param mode: string. Specify on which mode the generator works. Options are 'uniform' and 'nonuniform'.
+        :return: numpy array. Pattern sequence generated.
         """
-        max_freq = self._height * self._width * base_freq
-        sample_rate = 20 * max_freq
         pattern = np.zeros((self._frames, self._height, self._width), dtype=np.uint8)
-        for y in range(self._height):
-            for x in range(self._width):
-                freq = base_freq + (x + self._width * y) * freq_step
-                pattern[:, y, x] = 128 * np.sin(2 * np.pi * freq *
-                                                np.linspace(0, (self._frames / sample_rate),
-                                                            num=self._frames, endpoint=True)) + 127
-        return np.kron(pattern, np.ones((self._scale, self._scale)))
+        if mode == 'uniform':
+            max_freq = self._height * self._width * base_freq
+            sample_rate = 20 * max_freq
+            for y in range(self._height):
+                for x in range(self._width):
+                    freq = base_freq + (x + self._width * y) * freq_step
+                    pattern[:, y, x] = 127.5 * np.sin(2 * np.pi * freq *
+                                                      np.linspace(0, (self._frames / sample_rate),
+                                                                  num=self._frames, endpoint=True)) + 127.5
+            return np.kron(pattern, np.ones((self._scale, self._scale), dtype=np.uint8))
+        elif mode == 'nonuniform':
+            sample_rate = 20 * base_freq
+            for y in range(self._height):
+                for x in range(self._width):
+                    pattern[:, y, x] = 127.5 * np.sin(2 * np.pi * base_freq *
+                                                      np.linspace(0, (self._frames / sample_rate),
+                                                                  num=self._frames, endpoint=True)) + 127.5
+            return np.kron(pattern, np.ones((self._scale, self._scale), dtype=np.uint8))
 
     @staticmethod
     def gray2binary(pattern):
