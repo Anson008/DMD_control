@@ -64,23 +64,26 @@ class PatternSequenceGenerator(PatternSequence):
         :param mode: string. Specify on which mode the generator works. Options are 'uniform' and 'nonuniform'.
         :return: numpy array. Pattern sequence generated.
         """
-        pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
+        pattern = np.zeros((self._frames, self._height, self._width), dtype=np.uint8)
         if mode == 'nonuniform':
             for z in range(self._frames):
-                for y in range(self._height * self._scale):
-                    for x in range(self._width * self._scale):
-                        # first define the mapping between the index of period value and position (y, x)
-                        i_period = (x // self._scale) + self._width * (y // self._scale)
+                for y in range(self._height):
+                    for x in range(self._width):
+                        i_period = x + self._width * y
                         if (z // periods[i_period]) % 2 == 0:
                             pattern[z][y][x] = 255
                         else:
                             pattern[z][y][x] = 0
+            # Computes the Kronecker product, a composite array made of blocks of the second array scaled by the first.
+            pattern = np.kron(pattern, np.ones((self._scale, self._scale)))
+
         elif mode == 'uniform':
             for z in range(self._frames):
                 if (z // periods[0]) % 2 == 0:
                     pattern[z, :, :] = 255
                 else:
                     pattern[z, :, :] = 0
+            pattern = np.kron(pattern, np.ones((self._scale, self._scale)))
         else:
             raise ValueError('Mode must be "nonuniform" or "uniform"')
         return pattern
@@ -97,14 +100,14 @@ class PatternSequenceGenerator(PatternSequence):
         """
         max_freq = self._height * self._width * base_freq
         sample_rate = 20 * max_freq
-        pattern = np.zeros((self._frames, self._height * self._scale, self._width * self._scale), dtype=np.uint8)
-        for y in range(self._height * self._scale):
-            for x in range(self._width * self._scale):
-                freq = base_freq + ((x // self._scale) + self._width * (y // self._scale)) * freq_step
+        pattern = np.zeros((self._frames, self._height, self._width), dtype=np.uint8)
+        for y in range(self._height):
+            for x in range(self._width):
+                freq = base_freq + (x + self._width * y) * freq_step
                 pattern[:, y, x] = 128 * np.sin(2 * np.pi * freq *
                                                 np.linspace(0, (self._frames / sample_rate),
                                                             num=self._frames, endpoint=True)) + 127
-        return pattern
+        return np.kron(pattern, np.ones((self._scale, self._scale)))
 
     @staticmethod
     def gray2binary(pattern):
@@ -170,7 +173,7 @@ class PatternSequenceGenerator(PatternSequence):
 
     def pad(self, pattern, width=1920, height=1080):
         """
-        Pad the edge of patterns so that the image is 1920 * 1080.
+        Pad the edge of patterns so that the size of image is width * height.
         :param width: int, width of the pattern after padded.
         :param height: int, height of the pattern after padded.
         """
@@ -216,7 +219,7 @@ class PatternSequenceGenerator(PatternSequence):
         img = np.zeros((h, w))
         for i in range(h):
             for j in range(w):
-                c1i = (int(0.4*h) <= i <= int(0.6*h))
+                c1i = (int(0.2*h) <= i <= int(0.4*h)) or (int(0.6*h) <= i <= int(0.8*h))
                 c1j = (int(0.4*w) <= j <= int(0.6*w))
                 img[i, j] = 255 if c1i or c1j else 0
         return img
