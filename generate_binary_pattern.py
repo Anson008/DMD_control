@@ -7,18 +7,18 @@ import time
 # upper = 8  # Upper limit to search for prime numbers
 # periods = PeriodGenerator.prime_number_list(upper)
 # periods = PeriodGenerator.prime_numbers()
-periods = [i for i in range(2, 514, 2)]
-# periods = [2]
+# periods = [i for i in range(2, 514, 2)]
+periods = [5]
 
 # Pattern parameters
-frames = 20
-width = 10
-height = 10
-scale = 30
+frames = 200
+width = 20
+height = 20
+scale = 10
 
 start = time.time()
 patt = PatternSequenceGenerator(frames, width, height, scale)
-pattern = patt.generate_binary_patterns(periods, mode='nonuniform')
+pattern = patt.generate_binary_patterns(periods, mode='uniform')
 pattern_padded = patt.pad(pattern, width=1920, height=height*scale)
 end = time.time()
 print(f"It takes {end - start:.2f} s to generate patterns.")
@@ -28,9 +28,9 @@ print(f"It takes {end - start:.2f} s to generate patterns.")
 plt.plot(ts00, 'r.-')
 plt.show()"""
 
-#file_name = 'white_1920X1080'
-file_name = f'binary_{frames}Frames_{width}X{height}_scale{scale}_pad1_natural'
-#file_name = 'testB_150Frames_16X16_scale16_pad1_natural'
+# file_name = 'white_1920X1080'
+# file_name = f'binary_{frames}Frames_{width}X{height}_scale{scale}_pad1_natural'
+file_name = f'testB_{frames}Frames_{width}X{height}_scale{scale}_pad1_natural'
 
 start = time.time()
 patt.save_to_images(pattern_padded, directory="E:/Data_exp/Freq_Encoded_Data/patterns/" + file_name,
