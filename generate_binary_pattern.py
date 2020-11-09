@@ -7,19 +7,19 @@ import time
 # upper = 8  # Upper limit to search for prime numbers
 # periods = PeriodGenerator.prime_number_list(upper)
 # periods = PeriodGenerator.prime_numbers()
-# periods = [i for i in range(2, 514, 2)]
-periods = [5]
+periods = [i for i in range(2, 2000, 2)]
+# periods = [2]
 
 # Pattern parameters
-frames = 200
-width = 20
-height = 20
-scale = 10
+frames = 10000
+width = 45
+height = 15
+scale = 7
 
 start = time.time()
 patt = PatternSequenceGenerator(frames, width, height, scale)
-pattern = patt.generate_binary_patterns(periods, mode='uniform')
-pattern_padded = patt.pad(pattern, width=1920, height=height*scale)
+pattern = patt.generate_binary_patterns(periods, mode='nonuniform')
+pattern_padded = patt.pad(pattern, width=1920, height=1080)
 end = time.time()
 print(f"It takes {end - start:.2f} s to generate patterns.")
 

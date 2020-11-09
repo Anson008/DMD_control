@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 import time
 
 # Pattern parameters
-frames = 10000
-width = 20
-height = 20
-scale = 10
+width = 45
+height = 15
+scale = 7
+beta = 100
+frames = width * height * beta
 
 decompose = 1  # 0 - gray scale; 1 - decompose to binary.
 pad = 0  # 0 - no pad; 1 - pad

@@ -43,7 +43,7 @@ class PatternSequence:
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
-        file_path = directory + '/' + filename + '.npy'
+        file_path = os.path.join(directory, filename + '.npy')
         np.save(file_path, arr)
 
 
@@ -85,7 +85,7 @@ class PatternSequenceGenerator(PatternSequence):
             raise ValueError('Mode must be "nonuniform" or "uniform"')
         return pattern
 
-    def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1, mode='uniform'):
+    def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1, mode='nonuniform'):
         """
         Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal wave.
         The frequency of the wave at each pixel is the multiple of a base frequency and the index of the pixel.
@@ -98,8 +98,8 @@ class PatternSequenceGenerator(PatternSequence):
         :return: numpy array. Pattern sequence generated.
         """
         pattern = np.zeros((self._frames, self._height, self._width), dtype=np.uint8)
-        if mode == 'uniform':
-            max_freq = self._height * self._width * base_freq
+        if mode == 'nonuniform':
+            max_freq = (self._height * self._width - 1) * freq_step + base_freq
             sample_rate = 20 * max_freq
             for y in range(self._height):
                 for x in range(self._width):
@@ -108,7 +108,7 @@ class PatternSequenceGenerator(PatternSequence):
                                                       np.linspace(0, (self._frames / sample_rate),
                                                                   num=self._frames, endpoint=True)) + 127.5
             return np.kron(pattern, np.ones((self._scale, self._scale), dtype=np.uint8))
-        elif mode == 'nonuniform':
+        elif mode == 'uniform':
             sample_rate = 20 * base_freq
             for y in range(self._height):
                 for x in range(self._width):
