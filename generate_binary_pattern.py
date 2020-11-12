@@ -7,14 +7,14 @@ import time
 # upper = 8  # Upper limit to search for prime numbers
 # periods = PeriodGenerator.prime_number_list(upper)
 # periods = PeriodGenerator.prime_numbers()
-periods = [i for i in range(2, 2000, 2)]
+periods = [i for i in range(2, 4000, 2)]
 # periods = [2]
 
 # Pattern parameters
 frames = 10000
-width = 45
+width = 65
 height = 15
-scale = 7
+scale = 10
 
 start = time.time()
 patt = PatternSequenceGenerator(frames, width, height, scale)

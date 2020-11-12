@@ -117,6 +117,37 @@ class PatternSequenceGenerator(PatternSequence):
                                                                   num=self._frames, endpoint=True)) + 127.5
             return np.kron(pattern, np.ones((self._scale, self._scale), dtype=np.uint8))
 
+    def generate_patterns_from_npy(self, path_data, path_pattern="E:/Data_exp/Freq_Encoded_Data/patterns/", n_batch=100):
+        data = np.load(path_data)
+        n_frame = data.shape[0]
+        size_batch = int(n_frame / n_batch)
+
+        folder = f'sin_{self._frames}Frames_{self._width}X{self._height}_scale{self._scale}_pad{0}_bR{1}'
+        directory = path_pattern + folder
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        for i_batch in range(n_batch):
+            # Enlarge the patterns
+            pattern = np.kron(data[i_batch * size_batch:(i_batch + 1) * size_batch, :, :],
+                              np.ones((self._scale, self._scale), dtype=np.uint8))
+
+            # Decompose the 8-bit patterns to 1-bit patterns
+            pattern = self.gray2binary(pattern)
+
+            # Update number of frames and batches
+            n_frame_1bit = pattern.shape[0]
+            size_batch_1bit = int(size_batch * 8)
+
+            # Find the number of digits of the number of frames
+            length = len(str(int(self._frames * 8)))
+
+            # Save patterns to png files
+            for z in range(n_frame_1bit):
+                filename = folder + '_' + "{:d}".format(z + i_batch * size_batch_1bit).zfill(length) + '.png'
+                file_path = os.path.join(directory, filename)
+                cv2.imwrite(file_path, pattern[z, :, :], [cv2.IMWRITE_PNG_BILEVEL, 1])
+
     @staticmethod
     def gray2binary(pattern):
         """
