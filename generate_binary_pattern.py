@@ -11,9 +11,9 @@ periods = [i for i in range(2, 4000, 2)]
 # periods = [2]
 
 # Pattern parameters
-frames = 10000
-width = 65
-height = 15
+frames = 1000
+width = 60
+height = 20
 scale = 10
 
 start = time.time()

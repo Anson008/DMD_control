@@ -310,7 +310,7 @@ class PatternSequenceGenerator(PatternSequence):
 
     @staticmethod
     def save_to_video(pattern, fps, directory='./videos', filename='video1.avi',
-                      pattern_type="grayscale", threshold=127):
+                      pattern_type="grayscale", threshold=0.5):
         """
         Save pattern sequence as a video to user specified directory.
 
@@ -325,9 +325,10 @@ class PatternSequenceGenerator(PatternSequence):
         """
         if not os.path.exists(directory):
             os.makedirs(directory)
-        fs, w, h = pattern.shape
+        fs, h, w = pattern.shape
+        print("f, w, h:", fs, w, h)
         file_path = os.path.join(directory, filename)
-        fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
         if pattern_type == "binary":
             for z in range(fs):
