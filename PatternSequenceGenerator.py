@@ -85,7 +85,7 @@ class PatternSequenceGenerator(PatternSequence):
             raise ValueError('Mode must be "nonuniform" or "uniform"')
         return pattern
 
-    def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1, mode='nonuniform'):
+    def generate_sinusoidal_patterns(self, base_freq=0.1, freq_step=0.1, rs_factor=8, mode='nonuniform'):
         """
         Generate gray-scale pattern sequence. Along the time axis, the pixel values forms a sinusoidal wave.
         The frequency of the wave at each pixel is the multiple of a base frequency and the index of the pixel.
@@ -95,12 +95,13 @@ class PatternSequenceGenerator(PatternSequence):
         :param base_freq: float. Base frequency of the signal, i.e., the frequency of the pixel at upper-left corner.
         :param freq_step: float. The increment by which frequency is increased.
         :param mode: string. Specify on which mode the generator works. Options are 'uniform' and 'nonuniform'.
+        :param rs_factor: int. sample rate = rs_factor * f_max
         :return: numpy array. Pattern sequence generated.
         """
         pattern = np.zeros((self._frames, self._height, self._width), dtype=np.uint8)
         if mode == 'nonuniform':
             max_freq = (self._height * self._width - 1) * freq_step + base_freq
-            sample_rate = 20 * max_freq
+            sample_rate = rs_factor * max_freq
             for y in range(self._height):
                 for x in range(self._width):
                     freq = base_freq + (x + self._width * y) * freq_step
@@ -109,7 +110,7 @@ class PatternSequenceGenerator(PatternSequence):
                                                                   num=self._frames, endpoint=True)) + 127.5
             return np.kron(pattern, np.ones((self._scale, self._scale), dtype=np.uint8))
         elif mode == 'uniform':
-            sample_rate = 20 * base_freq
+            sample_rate = rs_factor * base_freq
             for y in range(self._height):
                 for x in range(self._width):
                     pattern[:, y, x] = 127.5 * np.sin(2 * np.pi * base_freq *
@@ -122,7 +123,7 @@ class PatternSequenceGenerator(PatternSequence):
         n_frame = data.shape[0]
         size_batch = int(n_frame / n_batch)
 
-        folder = f'sin_{self._frames}Frames_{self._width}X{self._height}_scale{self._scale}_pad{0}_bR{1}'
+        folder = os.path.split(path_data)[1][:-4]
         directory = path_pattern + folder
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -147,6 +148,10 @@ class PatternSequenceGenerator(PatternSequence):
                 filename = folder + '_' + "{:d}".format(z + i_batch * size_batch_1bit).zfill(length) + '.png'
                 file_path = os.path.join(directory, filename)
                 cv2.imwrite(file_path, pattern[z, :, :], [cv2.IMWRITE_PNG_BILEVEL, 1])
+
+    def generate_random_pattern(self):
+        pattern = np.random.rand(self._height, self._width)
+        return np.kron(pattern, np.ones((self._scale, self._scale)))
 
     @staticmethod
     def gray2binary(pattern):
@@ -326,7 +331,6 @@ class PatternSequenceGenerator(PatternSequence):
         if not os.path.exists(directory):
             os.makedirs(directory)
         fs, h, w = pattern.shape
-        print("f, w, h:", fs, w, h)
         file_path = os.path.join(directory, filename)
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         video = cv2.VideoWriter(file_path, fourcc, fps, (w, h), False)
