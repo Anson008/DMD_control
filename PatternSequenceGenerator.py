@@ -272,6 +272,12 @@ class PatternSequenceGenerator(PatternSequence):
                 img[i, j] = 255 if c1i or c1j else 0
         return img
 
+    def make_chess_board(self):
+        x = np.zeros((self._width, self._height), dtype=np.uint)
+        x[1::2, ::2] = 1
+        x[::2, 1::2] = 1
+        return np.kron(x, np.ones((self._scale, self._scale)))
+
     @staticmethod
     def save_single_pattern(img, directory='./calibration', filename='calib_01.png'):
         """
